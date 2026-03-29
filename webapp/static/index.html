@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SnipGen — CRISPR Guide RNA Design</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --accent: #238636;
+      --accent-hover: #2ea043;
+      --accent-light: #1f6feb;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --danger: #da3633;
+      --warn: #d29922;
+      --good: #3fb950;
+      --radius: 8px;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+    /* ── Header ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
+    .logo-icon { font-size: 1.5rem; }
+    .logo-sub { font-size: 0.75rem; color: var(--muted); font-weight: 400; letter-spacing: 0; }
+    .badge { background: #1f6feb22; color: var(--accent-light); border: 1px solid #1f6feb55; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.5px; }
+
+    /* ── Layout ── */
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; align-items: start; }
+    @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+
+    /* ── Cards ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+    .card-title { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.25rem; }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 1.1rem; }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+    label span { color: var(--text); font-size: 0.85rem; }
+    select, input[type="number"], input[type="range"] {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); border-radius: 6px; padding: 0.5rem 0.75rem;
+      font-size: 0.9rem; outline: none; transition: border-color .15s;
+    }
+    select:focus, input[type="number"]:focus { border-color: var(--accent-light); }
+    input[type="range"] { padding: 0.25rem 0; cursor: pointer; accent-color: var(--accent-light); }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 2rem 1rem; text-align: center; cursor: pointer;
+      transition: border-color .2s, background .2s; margin-bottom: 1.1rem;
+    }
+    .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent-light); background: #1f6feb11; }
+    .upload-zone.has-file { border-color: var(--good); background: #3fb95011; }
+    .upload-zone input { display: none; }
+    .upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .upload-text { font-size: 0.85rem; color: var(--muted); }
+    .upload-text strong { color: var(--text); }
+    .file-name { font-size: 0.8rem; color: var(--good); margin-top: 0.4rem; font-family: var(--mono); }
+
+    /* Run button */
+    .btn-run {
+      width: 100%; padding: 0.75rem; border: none; border-radius: 6px;
+      background: var(--accent); color: #fff; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: background .15s; display: flex; align-items: center;
+      justify-content: center; gap: 0.5rem;
+    }
+    .btn-run:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Row helper */
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+    /* ── Results panel ── */
+    .results-placeholder {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 320px; color: var(--muted); gap: 0.75rem; text-align: center;
+    }
+    .results-placeholder svg { opacity: 0.25; }
+
+    /* Stats strip */
+    .stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
+    .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.9rem 1rem; }
+    .stat-val { font-size: 1.6rem; font-weight: 700; }
+    .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    @media (max-width: 600px) { .stats-strip { grid-template-columns: 1fr 1fr; } }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; border-radius: 6px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead tr { background: #1c2128; }
+    th { padding: 0.6rem 0.8rem; text-align: left; font-size: 0.7rem; text-transform: uppercase;
+         letter-spacing: 0.5px; color: var(--muted); white-space: nowrap; }
+    td { padding: 0.55rem 0.8rem; border-top: 1px solid var(--border); white-space: nowrap; }
+    tr:hover td { background: #ffffff06; }
+    .seq { font-family: var(--mono); color: #79c0ff; letter-spacing: 1px; }
+    .pam { font-family: var(--mono); color: #ffa657; }
+    .score-bar { display: flex; align-items: center; gap: 6px; }
+    .bar { height: 6px; border-radius: 3px; background: var(--accent); flex-shrink: 0; }
+    .score-val { font-family: var(--mono); font-size: 0.78rem; }
+    .strand-pos { color: var(--good); }
+    .strand-neg { color: var(--warn); }
+    .gc-val { font-family: var(--mono); }
+    .rank { color: var(--muted); font-size: 0.78rem; }
+
+    /* Download buttons */
+    .dl-row { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+    .btn-dl {
+      padding: 0.4rem 0.9rem; border: 1px solid var(--border); background: var(--bg);
+      color: var(--text); border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+      transition: border-color .15s; display: flex; align-items: center; gap: 4px;
+    }
+    .btn-dl:hover { border-color: var(--accent-light); color: var(--accent-light); }
+
+    /* Spinner */
+    .spinner { width: 22px; height: 22px; border: 3px solid #ffffff33; border-top-color: #fff;
+               border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error / info */
+    .alert { padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1rem; }
+    .alert-error { background: #da363322; border: 1px solid #da363355; color: #ff7b72; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
+    .tab { padding: 0.5rem 1rem; font-size: 0.8rem; cursor: pointer; color: var(--muted);
+            border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
+    .tab.active { color: var(--text); border-bottom-color: var(--accent-light); }
+
+    /* Tooltip */
+    [data-tip] { position: relative; cursor: help; }
+    [data-tip]:hover::after {
+      content: attr(data-tip); position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+      background: #2d333b; border: 1px solid var(--border); color: var(--text); padding: 4px 8px;
+      border-radius: 4px; font-size: 0.72rem; white-space: nowrap; z-index: 10; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-icon">✂️</span>
+    <div>
+      <div>SnipGen</div>
+      <div class="logo-sub">CRISPR Guide RNA Design</div>
+    </div>
+  </div>
+  <span class="badge">v0.1.0</span>
+</header>
+
+<main>
+  <!-- ── LEFT: Config panel ── -->
+  <div class="card">
+    <div class="card-title">Design Parameters</div>
+
+    <!-- FASTA upload -->
+    <div class="form-group">
+      <label><span>Target Sequence (FASTA)</span></label>
+      <div class="upload-zone" id="dropZone">
+        <input type="file" id="fastaFile" accept=".fasta,.fa,.fna,.txt" />
+        <div class="upload-icon">🧬</div>
+        <div class="upload-text"><strong>Click to upload</strong> or drag &amp; drop</div>
+        <div class="upload-text">.fasta · .fa · .fna</div>
+        <div class="file-name" id="fileName"></div>
+      </div>
+    </div>
+
+    <!-- Cas variant -->
+    <div class="form-group">
+      <label><span>Cas Variant</span></label>
+      <select id="casVariant"></select>
+    </div>
+
+    <!-- Guide length -->
+    <div class="form-group">
+      <label><span>Guide Length (nt)</span></label>
+      <select id="guideLength">
+        <option value="17">17 nt</option>
+        <option value="18">18 nt</option>
+        <option value="19">19 nt</option>
+        <option value="20" selected>20 nt (standard)</option>
+        <option value="21">21 nt</option>
+      </select>
+    </div>
+
+    <!-- GC range -->
+    <div class="row">
+      <div class="form-group">
+        <label><span>Min GC%</span></label>
+        <input type="number" id="minGC" value="40" min="0" max="100" step="5" />
+      </div>
+      <div class="form-group">
+        <label><span>Max GC%</span></label>
+        <input type="number" id="maxGC" value="70" min="0" max="100" step="5" />
+      </div>
+    </div>
+
+    <!-- Top N -->
+    <div class="form-group">
+      <label>
+        <span>Top candidates: </span><span id="topNVal" style="color:var(--accent-light);font-weight:700">20</span>
+      </label>
+      <input type="range" id="topN" min="1" max="100" value="20" />
+    </div>
+
+    <button class="btn-run" id="runBtn" onclick="runDesign()" disabled>
+      <span id="btnContent">Upload a FASTA file to begin</span>
+    </button>
+  </div>
+
+  <!-- ── RIGHT: Results panel ── -->
+  <div id="resultsPanel">
+    <div class="results-placeholder" id="placeholder">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+        <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+      </svg>
+      <p style="font-size:.9rem">Results will appear here after running the pipeline.</p>
+      <p style="font-size:.8rem;color:var(--muted)">Upload a FASTA file and click Run.</p>
+    </div>
+    <div id="resultsContent" style="display:none"></div>
+  </div>
+</main>
+
+<script>
+// ── State ──────────────────────────────────────────
+let lastResult = null;
+
+// ── Load variants on page load ──────────────────────
+async function loadVariants() {
+  const res = await fetch('/variants');
+  const data = await res.json();
+  const sel = document.getElementById('casVariant');
+  sel.innerHTML = '';
+  for (const [k, v] of Object.entries(data)) {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = `${k}  —  ${v.pattern} (${v.position})`;
+    if (k === 'SpCas9') opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+loadVariants();
+
+// ── Range display ───────────────────────────────────
+document.getElementById('topN').addEventListener('input', e => {
+  document.getElementById('topNVal').textContent = e.target.value;
+});
+
+// ── Upload zone ─────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fastaFile');
+const fileName  = document.getElementById('fileName');
+const runBtn    = document.getElementById('runBtn');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+function setFile(f) {
+  dropZone.classList.add('has-file');
+  fileName.textContent = '✓  ' + f.name;
+  runBtn.disabled = false;
+  document.getElementById('btnContent').innerHTML = '▶ &nbsp;Run SnipGen';
+}
+
+// ── Run pipeline ────────────────────────────────────
+async function runDesign() {
+  const file = fileInput.files[0] || (window._droppedFile);
+  if (!file) return;
+
+  // Validate GC
+  const minGC = parseInt(document.getElementById('minGC').value) / 100;
+  const maxGC = parseInt(document.getElementById('maxGC').value) / 100;
+  if (minGC >= maxGC) {
+    showError('Min GC% must be less than Max GC%');
+    return;
+  }
+
+  // Show spinner
+  runBtn.disabled = true;
+  document.getElementById('btnContent').innerHTML = '<div class="spinner"></div>&nbsp; Running…';
+  document.getElementById('placeholder').style.display = 'flex';
+  document.getElementById('resultsContent').style.display = 'none';
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  const params = new URLSearchParams({
+    cas_variant:  document.getElementById('casVariant').value,
+    guide_length: document.getElementById('guideLength').value,
+    min_gc:       minGC,
+    max_gc:       maxGC,
+    top_n:        document.getElementById('topN').value,
+  });
+
+  try {
+    const res = await fetch(`/design?${params}`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Server error');
+    lastResult = data;
+    renderResults(data);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    runBtn.disabled = false;
+    document.getElementById('btnContent').innerHTML = '▶ &nbsp;Run SnipGen';
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('resultsContent');
+  el.innerHTML = `<div class="alert alert-error">⚠ ${msg}</div>`;
+  el.style.display = 'block';
+  document.getElementById('placeholder').style.display = 'none';
+}
+
+// ── Render results ───────────────────────────────────
+function renderResults(data) {
+  const m = data.metadata;
+  const candidates = data.candidates || [];
+
+  document.getElementById('placeholder').style.display = 'none';
+  const el = document.getElementById('resultsContent');
+  el.style.display = 'block';
+
+  const passRate = m.candidates_passed_filters && m.total_candidates_evaluated
+    ? (m.candidates_passed_filters / m.total_candidates_evaluated * 100).toFixed(1)
+    : '—';
+
+  const topScore = candidates.length ? candidates[0].final_score.toFixed(3) : '—';
+
+  el.innerHTML = `
+    <div class="stats-strip">
+      <div class="stat"><div class="stat-val">${m.total_candidates_evaluated?.toLocaleString() ?? '—'}</div><div class="stat-label">Candidates evaluated</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--good)">${m.candidates_passed_filters?.toLocaleString() ?? '—'}</div><div class="stat-label">Passed filters (${passRate}%)</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--warn)">${m.total_rejected?.toLocaleString() ?? '—'}</div><div class="stat-label">Rejected</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--accent-light)">${topScore}</div><div class="stat-label">Top score</div></div>
+    </div>
+
+    <div class="card" style="padding:1rem">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'tab-top')">Top ${candidates.length} candidates</div>
+        <div class="tab" onclick="switchTab(this,'tab-meta')">Run metadata</div>
+      </div>
+
+      <div id="tab-top">
+        ${candidates.length === 0
+          ? '<p style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem">No candidates passed all filters. Try relaxing the GC range or switching Cas variant.</p>'
+          : buildTable(candidates)
+        }
+        <div class="dl-row">
+          <button class="btn-dl" onclick="downloadCSV()">⬇ Download CSV</button>
+          <button class="btn-dl" onclick="downloadJSON()">⬇ Download JSON</button>
+        </div>
+      </div>
+
+      <div id="tab-meta" style="display:none">
+        <table style="font-size:.82rem">
+          ${Object.entries(m).map(([k,v]) => `
+            <tr>
+              <td style="color:var(--muted);padding:.4rem .6rem;white-space:nowrap">${k.replaceAll('_',' ')}</td>
+              <td style="padding:.4rem .6rem;font-family:var(--mono)">${v}</td>
+            </tr>`).join('')}
+        </table>
+      </div>
+    </div>`;
+}
+
+function buildTable(candidates) {
+  const rows = candidates.map((c, i) => {
+    const barW = Math.round(c.final_score * 80);
+    const gcPct = (c.gc_content * 100).toFixed(0);
+    const strandCls = c.strand === '+' ? 'strand-pos' : 'strand-neg';
+    return `<tr>
+      <td class="rank">${i + 1}</td>
+      <td class="seq" data-tip="${c.chromosome}:${c.start}-${c.end}">${c.sequence}</td>
+      <td class="pam">${c.pam}</td>
+      <td class="${strandCls}">${c.strand}</td>
+      <td class="gc-val">${gcPct}%</td>
+      <td>
+        <div class="score-bar">
+          <div class="bar" style="width:${barW}px"></div>
+          <span class="score-val">${c.final_score.toFixed(3)}</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  return `
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>#</th>
+          <th>Spacer sequence (20 nt)</th>
+          <th data-tip="PAM site">PAM</th>
+          <th>Strand</th>
+          <th data-tip="GC content of spacer">GC%</th>
+          <th>Score</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function switchTab(el, id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['tab-top','tab-meta'].forEach(t => {
+    const el = document.getElementById(t);
+    if (el) el.style.display = t === id ? 'block' : 'none';
+  });
+}
+
+// ── Downloads ────────────────────────────────────────
+function downloadCSV() {
+  if (!lastResult?.candidates?.length) return;
+  const cols = Object.keys(lastResult.candidates[0]);
+  const lines = [cols.join(','), ...lastResult.candidates.map(r => cols.map(c => r[c]).join(','))];
+  download('snipgen_results.csv', lines.join('\n'), 'text/csv');
+}
+
+function downloadJSON() {
+  if (!lastResult) return;
+  download('snipgen_results.json', JSON.stringify(lastResult, null, 2), 'application/json');
+}
+
+function download(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name;
+  a.click();
+}
+</script>
+</body>
+</html>
