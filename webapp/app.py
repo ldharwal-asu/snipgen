@@ -6,16 +6,14 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 
 from snipgen.filters.pam_filter import PAM_REGISTRY
 from snipgen.pipeline import PipelineConfig, SnipGenPipeline
 
 app = FastAPI(title="SnipGen", description="AI-driven CRISPR guide RNA design")
 
-# Serve static files (index.html, etc.)
-_static = Path(__file__).parent / "static"
-app.mount("/static", StaticFiles(directory=str(_static)), name="static")
+# Resolve the static directory relative to this file so it works on any host
+_static = Path(__file__).resolve().parent / "static"
 
 
 @app.get("/", response_class=HTMLResponse)
