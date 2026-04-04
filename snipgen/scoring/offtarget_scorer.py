@@ -19,7 +19,7 @@ def estimate_off_target_burden(
     seed = guide[-12:]
     off_targets: dict[int, int] = {i: 0 for i in range(1, max_mismatches + 1)}
 
-    seq = full_sequence.upper()
+    seq = full_sequence.upper()[:5000]  # cap to first 5000 bp — prevents Vercel timeout
     for i in range(len(seq) - 20):
         window = seq[i : i + 20]
         if window == guide:
