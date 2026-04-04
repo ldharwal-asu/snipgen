@@ -29,6 +29,9 @@ snipgen = "snipgen.cli:main"
 testpaths = ["tests"]
 addopts = "--cov=snipgen --cov-report=term-missing"
 
+[tool.setuptools.packages.find]
+include = ["snipgen*"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
