@@ -1,455 +1,525 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SnipGen — CRISPR Guide RNA Design</title>
-  <style>
-    :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --border: #30363d;
-      --accent: #238636;
-      --accent-hover: #2ea043;
-      --accent-light: #1f6feb;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --danger: #da3633;
-      --warn: #d29922;
-      --good: #3fb950;
-      --radius: 8px;
-      --font: 'Inter', system-ui, -apple-system, sans-serif;
-      --mono: 'JetBrains Mono', 'Fira Code', monospace;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnipGen v2 — CRISPR Guide RNA Safety Platform</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --surface2: #21262d;
+    --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+    --green: #3fb950; --yellow: #d29922; --orange: #db6d28; --red: #f85149;
+    --blue: #58a6ff; --purple: #bc8cff; --accent: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.5; }
+  a { color: var(--accent); text-decoration: none; }
 
-    /* ── Header ── */
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 60px;
-    }
-    .logo { display: flex; align-items: center; gap: 10px; font-size: 1.25rem; font-weight: 700; letter-spacing: -0.5px; }
-    .logo-icon { font-size: 1.5rem; }
-    .logo-sub { font-size: 0.75rem; color: var(--muted); font-weight: 400; letter-spacing: 0; }
-    .badge { background: #1f6feb22; color: var(--accent-light); border: 1px solid #1f6feb55; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.5px; }
+  /* Layout */
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+  header .version { font-size: 11px; color: var(--muted); background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 2px 8px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
 
-    /* ── Layout ── */
-    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; align-items: start; }
-    @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  /* Upload panel */
+  #upload-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 32px; text-align: center; }
+  #upload-panel h2 { font-size: 20px; margin-bottom: 8px; }
+  #upload-panel p { color: var(--muted); margin-bottom: 24px; }
+  .drop-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 40px; cursor: pointer; transition: border-color 0.2s; margin-bottom: 24px; }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent); background: rgba(88,166,255,0.05); }
+  .drop-zone .icon { font-size: 40px; margin-bottom: 12px; }
+  .drop-zone p { color: var(--muted); margin: 0; }
+  .drop-zone .filename { color: var(--green); font-weight: 600; margin-top: 8px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin-bottom: 24px; }
+  .control-group { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
+  .control-group label { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .control-group select, .control-group input { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 6px 10px; font-size: 13px; }
+  .presets { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+  .preset-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); padding: 6px 16px; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; }
+  .preset-btn:hover, .preset-btn.active { border-color: var(--accent); color: var(--accent); }
+  .btn { background: var(--accent); color: #000; border: none; border-radius: 6px; padding: 10px 28px; font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-outline { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .btn-outline:hover { background: rgba(88,166,255,0.1); }
 
-    /* ── Cards ── */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
-    .card-title { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1.25rem; }
+  /* Dashboard */
+  #dashboard { display: none; }
+  .summary-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .stat-card .label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+  .stat-card .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-    /* ── Form ── */
-    .form-group { margin-bottom: 1.1rem; }
-    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
-    label span { color: var(--text); font-size: 0.85rem; }
-    select, input[type="number"], input[type="range"] {
-      width: 100%; background: var(--bg); border: 1px solid var(--border);
-      color: var(--text); border-radius: 6px; padding: 0.5rem 0.75rem;
-      font-size: 0.9rem; outline: none; transition: border-color .15s;
-    }
-    select:focus, input[type="number"]:focus { border-color: var(--accent-light); }
-    input[type="range"] { padding: 0.25rem 0; cursor: pointer; accent-color: var(--accent-light); }
+  /* Safety distribution */
+  .safety-dist { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .safety-pill { display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 600; }
+  .safety-pill .dot { width: 8px; height: 8px; border-radius: 50%; }
 
-    /* Upload zone */
-    .upload-zone {
-      border: 2px dashed var(--border); border-radius: var(--radius);
-      padding: 2rem 1rem; text-align: center; cursor: pointer;
-      transition: border-color .2s, background .2s; margin-bottom: 1.1rem;
-    }
-    .upload-zone:hover, .upload-zone.dragover { border-color: var(--accent-light); background: #1f6feb11; }
-    .upload-zone.has-file { border-color: var(--good); background: #3fb95011; }
-    .upload-zone input { display: none; }
-    .upload-icon { font-size: 2rem; margin-bottom: 0.5rem; }
-    .upload-text { font-size: 0.85rem; color: var(--muted); }
-    .upload-text strong { color: var(--text); }
-    .file-name { font-size: 0.8rem; color: var(--good); margin-top: 0.4rem; font-family: var(--mono); }
+  /* Guide cards */
+  .section-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .section-title .count { font-size: 12px; color: var(--muted); font-weight: 400; background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 2px 8px; }
+  .guide-cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .guide-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .guide-card-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; }
+  .guide-card-header:hover { background: rgba(255,255,255,0.02); }
+  .guide-rank { font-size: 12px; color: var(--muted); font-weight: 700; min-width: 32px; }
+  .guide-id { font-size: 12px; color: var(--muted); min-width: 56px; }
+  .guide-seq { font-family: "SFMono-Regular", Consolas, monospace; font-size: 13px; color: var(--blue); flex: 1; letter-spacing: 1px; }
+  .safety-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+  .badge-green { background: rgba(63,185,80,0.15); color: var(--green); }
+  .badge-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .badge-orange { background: rgba(219,109,40,0.15); color: var(--orange); }
+  .badge-red { background: rgba(248,81,73,0.15); color: var(--red); }
+  .score-bar-wrap { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+  .score-bar { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+  .score-val { font-size: 13px; font-weight: 700; min-width: 32px; text-align: right; }
+  .expand-icon { color: var(--muted); font-size: 12px; transition: transform 0.2s; }
+  .guide-card.expanded .expand-icon { transform: rotate(90deg); }
 
-    /* Run button */
-    .btn-run {
-      width: 100%; padding: 0.75rem; border: none; border-radius: 6px;
-      background: var(--accent); color: #fff; font-size: 0.95rem; font-weight: 600;
-      cursor: pointer; transition: background .15s; display: flex; align-items: center;
-      justify-content: center; gap: 0.5rem;
-    }
-    .btn-run:hover:not(:disabled) { background: var(--accent-hover); }
-    .btn-run:disabled { opacity: 0.5; cursor: not-allowed; }
+  /* Guide card body */
+  .guide-card-body { display: none; padding: 16px; border-top: 1px solid var(--border); }
+  .guide-card.expanded .guide-card-body { display: block; }
+  .guide-meta { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px; }
+  .meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .meta-item .key { font-size: 11px; color: var(--muted); }
+  .meta-item .val { font-size: 13px; font-weight: 600; font-family: "SFMono-Regular", monospace; }
+  .scores-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .score-dim { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 12px; }
+  .score-dim .dim-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+  .score-dim .dim-val { font-size: 24px; font-weight: 700; }
+  .score-dim .dim-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+  .score-dim .dim-bar-fill { height: 100%; border-radius: 2px; }
+  .recommendation { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; padding: 10px 14px; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  .ot-counts { display: flex; gap: 12px; font-size: 12px; }
+  .ot-count { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; }
+  .ot-count span { color: var(--muted); }
+  .copy-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); padding: 4px 12px; font-size: 12px; cursor: pointer; }
+  .copy-btn:hover { color: var(--text); border-color: var(--accent); }
 
-    /* Row helper */
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  /* Full table */
+  .results-table-wrap { overflow-x: auto; margin-bottom: 32px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead { position: sticky; top: 0; background: var(--surface); }
+  th { padding: 10px 12px; text-align: left; color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); cursor: pointer; white-space: nowrap; user-select: none; }
+  th:hover { color: var(--text); }
+  td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .mono { font-family: "SFMono-Regular", Consolas, monospace; letter-spacing: 0.5px; }
+  .export-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 
-    /* ── Results panel ── */
-    .results-placeholder {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 320px; color: var(--muted); gap: 0.75rem; text-align: center;
-    }
-    .results-placeholder svg { opacity: 0.25; }
+  /* Radar chart */
+  .radar-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+  .radar-wrap h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; width: 100%; }
+  svg.radar { overflow: visible; }
 
-    /* Stats strip */
-    .stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
-    .stat { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.9rem 1rem; }
-    .stat-val { font-size: 1.6rem; font-weight: 700; }
-    .stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-    @media (max-width: 600px) { .stats-strip { grid-template-columns: 1fr 1fr; } }
+  /* Loading */
+  #loading { display: none; text-align: center; padding: 60px; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Table */
-    .table-wrap { overflow-x: auto; border-radius: 6px; border: 1px solid var(--border); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    thead tr { background: #1c2128; }
-    th { padding: 0.6rem 0.8rem; text-align: left; font-size: 0.7rem; text-transform: uppercase;
-         letter-spacing: 0.5px; color: var(--muted); white-space: nowrap; }
-    td { padding: 0.55rem 0.8rem; border-top: 1px solid var(--border); white-space: nowrap; }
-    tr:hover td { background: #ffffff06; }
-    .seq { font-family: var(--mono); color: #79c0ff; letter-spacing: 1px; }
-    .pam { font-family: var(--mono); color: #ffa657; }
-    .score-bar { display: flex; align-items: center; gap: 6px; }
-    .bar { height: 6px; border-radius: 3px; background: var(--accent); flex-shrink: 0; }
-    .score-val { font-family: var(--mono); font-size: 0.78rem; }
-    .strand-pos { color: var(--good); }
-    .strand-neg { color: var(--warn); }
-    .gc-val { font-family: var(--mono); }
-    .rank { color: var(--muted); font-size: 0.78rem; }
-
-    /* Download buttons */
-    .dl-row { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
-    .btn-dl {
-      padding: 0.4rem 0.9rem; border: 1px solid var(--border); background: var(--bg);
-      color: var(--text); border-radius: 6px; font-size: 0.8rem; cursor: pointer;
-      transition: border-color .15s; display: flex; align-items: center; gap: 4px;
-    }
-    .btn-dl:hover { border-color: var(--accent-light); color: var(--accent-light); }
-
-    /* Spinner */
-    .spinner { width: 22px; height: 22px; border: 3px solid #ffffff33; border-top-color: #fff;
-               border-radius: 50%; animation: spin .7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Error / info */
-    .alert { padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1rem; }
-    .alert-error { background: #da363322; border: 1px solid #da363355; color: #ff7b72; }
-
-    /* Tabs */
-    .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
-    .tab { padding: 0.5rem 1rem; font-size: 0.8rem; cursor: pointer; color: var(--muted);
-            border-bottom: 2px solid transparent; transition: color .15s, border-color .15s; }
-    .tab.active { color: var(--text); border-bottom-color: var(--accent-light); }
-
-    /* Tooltip */
-    [data-tip] { position: relative; cursor: help; }
-    [data-tip]:hover::after {
-      content: attr(data-tip); position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
-      background: #2d333b; border: 1px solid var(--border); color: var(--text); padding: 4px 8px;
-      border-radius: 4px; font-size: 0.72rem; white-space: nowrap; z-index: 10; pointer-events: none;
-    }
-  </style>
+  /* Error */
+  #error-box { display: none; background: rgba(248,81,73,0.1); border: 1px solid rgba(248,81,73,0.3); border-radius: 8px; padding: 16px; margin-bottom: 16px; color: var(--red); }
+</style>
 </head>
 <body>
 
 <header>
-  <div class="logo">
-    <span class="logo-icon">✂️</span>
-    <div>
-      <div>SnipGen</div>
-      <div class="logo-sub">CRISPR Guide RNA Design</div>
-    </div>
-  </div>
-  <span class="badge">v0.1.0</span>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <h1>SnipGen</h1>
+  <span class="version">v2.0 — Safety Engine</span>
 </header>
 
-<main>
-  <!-- ── LEFT: Config panel ── -->
-  <div class="card">
-    <div class="card-title">Design Parameters</div>
+<div class="container">
+  <div id="error-box"></div>
+  <div id="loading"><div class="spinner"></div><p>Designing guides...</p></div>
 
-    <!-- FASTA upload -->
-    <div class="form-group">
-      <label><span>Target Sequence (FASTA)</span></label>
-      <div class="upload-zone" id="dropZone">
-        <input type="file" id="fastaFile" accept=".fasta,.fa,.fna,.txt" />
-        <div class="upload-icon">🧬</div>
-        <div class="upload-text"><strong>Click to upload</strong> or drag &amp; drop</div>
-        <div class="upload-text">.fasta · .fa · .fna</div>
-        <div class="file-name" id="fileName"></div>
+  <!-- Upload Panel -->
+  <div id="upload-panel">
+    <h2>CRISPR Guide RNA Safety Platform</h2>
+    <p>Upload a FASTA file to design guide RNAs with multi-dimensional safety scoring</p>
+
+    <div class="drop-zone" id="drop-zone">
+      <div class="icon">🧬</div>
+      <p>Drop your FASTA file here or <strong style="color:var(--accent)">browse</strong></p>
+      <div class="filename" id="filename-label"></div>
+      <input type="file" id="file-input" accept=".fasta,.fa,.fna,.gz" style="display:none">
+    </div>
+
+    <div style="margin-bottom:12px;font-size:12px;color:var(--muted);font-weight:600">STRICTNESS PRESET</div>
+    <div class="presets">
+      <button class="preset-btn" data-preset="research">Research (Balanced)</button>
+      <button class="preset-btn active" data-preset="therapeutic">Therapeutic (Max Safety)</button>
+      <button class="preset-btn" data-preset="screening">Screening (Max On-Target)</button>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <label>Cas Variant</label>
+        <select id="cas-variant">
+          <option value="SpCas9">SpCas9 (NGG)</option>
+          <option value="SaCas9">SaCas9 (NNGRRT)</option>
+          <option value="Cpf1">Cas12a/Cpf1 (TTTV)</option>
+          <option value="xCas9">xCas9 (NG)</option>
+          <option value="Cas9-NG">Cas9-NG (NG)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Guide Length</label>
+        <input type="number" id="guide-length" value="20" min="17" max="25">
+      </div>
+      <div class="control-group">
+        <label>Min GC%</label>
+        <input type="number" id="min-gc" value="40" min="0" max="100" step="5">
+      </div>
+      <div class="control-group">
+        <label>Max GC%</label>
+        <input type="number" id="max-gc" value="70" min="0" max="100" step="5">
+      </div>
+      <div class="control-group">
+        <label>Top N Guides</label>
+        <input type="number" id="top-n" value="20" min="1" max="200">
       </div>
     </div>
 
-    <!-- Cas variant -->
-    <div class="form-group">
-      <label><span>Cas Variant</span></label>
-      <select id="casVariant"></select>
-    </div>
-
-    <!-- Guide length -->
-    <div class="form-group">
-      <label><span>Guide Length (nt)</span></label>
-      <select id="guideLength">
-        <option value="17">17 nt</option>
-        <option value="18">18 nt</option>
-        <option value="19">19 nt</option>
-        <option value="20" selected>20 nt (standard)</option>
-        <option value="21">21 nt</option>
-      </select>
-    </div>
-
-    <!-- GC range -->
-    <div class="row">
-      <div class="form-group">
-        <label><span>Min GC%</span></label>
-        <input type="number" id="minGC" value="40" min="0" max="100" step="5" />
-      </div>
-      <div class="form-group">
-        <label><span>Max GC%</span></label>
-        <input type="number" id="maxGC" value="70" min="0" max="100" step="5" />
-      </div>
-    </div>
-
-    <!-- Top N -->
-    <div class="form-group">
-      <label>
-        <span>Top candidates: </span><span id="topNVal" style="color:var(--accent-light);font-weight:700">20</span>
-      </label>
-      <input type="range" id="topN" min="1" max="100" value="20" />
-    </div>
-
-    <button class="btn-run" id="runBtn" onclick="runDesign()" disabled>
-      <span id="btnContent">Upload a FASTA file to begin</span>
-    </button>
+    <button class="btn" id="run-btn" disabled>Design Guides</button>
   </div>
 
-  <!-- ── RIGHT: Results panel ── -->
-  <div id="resultsPanel">
-    <div class="results-placeholder" id="placeholder">
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-        <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
-      </svg>
-      <p style="font-size:.9rem">Results will appear here after running the pipeline.</p>
-      <p style="font-size:.8rem;color:var(--muted)">Upload a FASTA file and click Run.</p>
+  <!-- Dashboard -->
+  <div id="dashboard">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <h2 style="font-size:18px">Analysis Results</h2>
+        <div id="seq-info" style="color:var(--muted);font-size:13px;margin-top:2px"></div>
+      </div>
+      <button class="btn btn-outline" id="new-analysis-btn">New Analysis</button>
     </div>
-    <div id="resultsContent" style="display:none"></div>
+
+    <!-- Stats bar -->
+    <div class="summary-bar" id="summary-bar"></div>
+
+    <!-- Safety distribution -->
+    <div class="safety-dist" id="safety-dist"></div>
+
+    <!-- Radar chart for top guide -->
+    <div class="radar-wrap" id="radar-wrap">
+      <h3>Score Profile — Top Guide</h3>
+      <svg class="radar" id="radar-svg" width="200" height="200" viewBox="-110 -110 220 220"></svg>
+      <div id="radar-legend" style="display:flex;flex-direction:column;gap:8px;font-size:13px"></div>
+    </div>
+
+    <!-- Top 5 guide cards -->
+    <div class="section-title">Top Guides <span class="count" id="top-count"></span></div>
+    <div class="guide-cards" id="guide-cards"></div>
+
+    <!-- Export -->
+    <div class="export-bar">
+      <button class="btn btn-outline" id="export-csv-btn">Download CSV</button>
+      <button class="btn btn-outline" id="export-json-btn">Download JSON</button>
+    </div>
+
+    <!-- Full table -->
+    <div class="section-title">All Passing Guides <span class="count" id="all-count"></span></div>
+    <div class="results-table-wrap">
+      <table id="results-table">
+        <thead>
+          <tr>
+            <th>Rank</th><th>ID</th><th>Sequence</th><th>PAM</th>
+            <th>Composite</th><th>On-Target</th><th>Off-Target</th><th>Consequence</th><th>Confidence</th>
+            <th>Safety</th><th>GC%</th><th>Strand</th><th>Position</th>
+          </tr>
+        </thead>
+        <tbody id="results-tbody"></tbody>
+      </table>
+    </div>
   </div>
-</main>
+</div>
 
 <script>
-// ── State ──────────────────────────────────────────
+// ─── State ───────────────────────────────────────────────────────────────────
+let uploadedFile = null;
 let lastResult = null;
 
-// ── Load variants on page load ──────────────────────
-async function loadVariants() {
-  const res = await fetch('/variants');
-  const data = await res.json();
-  const sel = document.getElementById('casVariant');
-  sel.innerHTML = '';
-  for (const [k, v] of Object.entries(data)) {
-    const opt = document.createElement('option');
-    opt.value = k;
-    opt.textContent = `${k}  —  ${v.pattern} (${v.position})`;
-    if (k === 'SpCas9') opt.selected = true;
-    sel.appendChild(opt);
-  }
-}
-loadVariants();
+const PRESETS = {
+  research:     { on_target: 0.33, off_target: 0.33, consequence: 0.34 },
+  therapeutic:  { on_target: 0.25, off_target: 0.25, consequence: 0.40 },
+  screening:    { on_target: 0.50, off_target: 0.30, consequence: 0.20 },
+};
+let activePreset = 'therapeutic';
 
-// ── Range display ───────────────────────────────────
-document.getElementById('topN').addEventListener('input', e => {
-  document.getElementById('topNVal').textContent = e.target.value;
-});
-
-// ── Upload zone ─────────────────────────────────────
-const dropZone = document.getElementById('dropZone');
-const fileInput = document.getElementById('fastaFile');
-const fileName  = document.getElementById('fileName');
-const runBtn    = document.getElementById('runBtn');
+// ─── Upload & drag-drop ──────────────────────────────────────────────────────
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
 
 dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', e => {
-  e.preventDefault(); dropZone.classList.remove('dragover');
-  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  setFile(e.dataTransfer.files[0]);
 });
-fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
 
 function setFile(f) {
-  dropZone.classList.add('has-file');
-  fileName.textContent = '✓  ' + f.name;
-  runBtn.disabled = false;
-  document.getElementById('btnContent').innerHTML = '▶ &nbsp;Run SnipGen';
+  if (!f) return;
+  uploadedFile = f;
+  document.getElementById('filename-label').textContent = f.name;
+  document.getElementById('run-btn').disabled = false;
 }
 
-// ── Run pipeline ────────────────────────────────────
-async function runDesign() {
-  const file = fileInput.files[0] || (window._droppedFile);
-  if (!file) return;
+// ─── Presets ─────────────────────────────────────────────────────────────────
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activePreset = btn.dataset.preset;
+  });
+});
 
-  // Validate GC
-  const minGC = parseInt(document.getElementById('minGC').value) / 100;
-  const maxGC = parseInt(document.getElementById('maxGC').value) / 100;
-  if (minGC >= maxGC) {
-    showError('Min GC% must be less than Max GC%');
-    return;
-  }
+// ─── Run analysis ─────────────────────────────────────────────────────────────
+document.getElementById('run-btn').addEventListener('click', runAnalysis);
 
-  // Show spinner
-  runBtn.disabled = true;
-  document.getElementById('btnContent').innerHTML = '<div class="spinner"></div>&nbsp; Running…';
-  document.getElementById('placeholder').style.display = 'flex';
-  document.getElementById('resultsContent').style.display = 'none';
+async function runAnalysis() {
+  if (!uploadedFile) return;
+  showError('');
+  show('loading'); hide('upload-panel'); hide('dashboard');
 
   const fd = new FormData();
-  fd.append('file', file);
+  fd.append('file', uploadedFile);
 
   const params = new URLSearchParams({
-    cas_variant:  document.getElementById('casVariant').value,
-    guide_length: document.getElementById('guideLength').value,
-    min_gc:       minGC,
-    max_gc:       maxGC,
-    top_n:        document.getElementById('topN').value,
+    cas_variant: document.getElementById('cas-variant').value,
+    guide_length: document.getElementById('guide-length').value,
+    min_gc: (parseFloat(document.getElementById('min-gc').value) / 100).toFixed(2),
+    max_gc: (parseFloat(document.getElementById('max-gc').value) / 100).toFixed(2),
+    top_n: document.getElementById('top-n').value,
   });
 
   try {
-    const res = await fetch(`/design?${params}`, { method: 'POST', body: fd });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || 'Server error');
-    lastResult = data;
-    renderResults(data);
+    const resp = await fetch('/design?' + params, { method: 'POST', body: fd });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+      throw new Error(err.detail || resp.statusText);
+    }
+    lastResult = await resp.json();
+    renderDashboard(lastResult);
+    hide('loading'); show('dashboard');
   } catch (err) {
+    hide('loading'); show('upload-panel');
     showError(err.message);
-  } finally {
-    runBtn.disabled = false;
-    document.getElementById('btnContent').innerHTML = '▶ &nbsp;Run SnipGen';
   }
 }
 
-function showError(msg) {
-  const el = document.getElementById('resultsContent');
-  el.innerHTML = `<div class="alert alert-error">⚠ ${msg}</div>`;
-  el.style.display = 'block';
-  document.getElementById('placeholder').style.display = 'none';
-}
-
-// ── Render results ───────────────────────────────────
-function renderResults(data) {
-  const m = data.metadata;
+// ─── Render dashboard ─────────────────────────────────────────────────────────
+function renderDashboard(data) {
+  const meta = data.metadata || {};
   const candidates = data.candidates || [];
 
-  document.getElementById('placeholder').style.display = 'none';
-  const el = document.getElementById('resultsContent');
-  el.style.display = 'block';
+  // Seq info
+  const seqStats = (meta.sequence_stats || []).map(s => `${s.id} (${s.length.toLocaleString()} bp, GC ${(s.gc_content*100).toFixed(1)}%)`).join(' · ');
+  document.getElementById('seq-info').textContent = seqStats;
 
-  const passRate = m.candidates_passed_filters && m.total_candidates_evaluated
-    ? (m.candidates_passed_filters / m.total_candidates_evaluated * 100).toFixed(1)
-    : '—';
+  // Summary cards
+  const sd = meta.safety_distribution || {};
+  document.getElementById('summary-bar').innerHTML = [
+    { label: 'Candidates Evaluated', value: (meta.total_candidates_evaluated||0).toLocaleString(), sub: 'before filters' },
+    { label: 'Passed Filters', value: (meta.candidates_passed_filters||0).toLocaleString(), sub: `${((meta.pass_rate||0)*100).toFixed(1)}% pass rate` },
+    { label: 'After Dedup', value: (meta.candidates_after_dedup||0).toLocaleString(), sub: 'unique sites' },
+    { label: 'Guides Returned', value: candidates.length, sub: `top ${meta.top_n_requested||20}` },
+  ].map(s => `<div class="stat-card"><div class="label">${s.label}</div><div class="value">${s.value}</div><div class="sub">${s.sub}</div></div>`).join('');
 
-  const topScore = candidates.length ? candidates[0].final_score.toFixed(3) : '—';
+  // Safety distribution
+  const sdColors = { HIGH: 'green', MEDIUM: 'yellow', LOW: 'orange', AVOID: 'red' };
+  document.getElementById('safety-dist').innerHTML =
+    Object.entries(sdColors).map(([label, color]) =>
+      `<div class="safety-pill"><div class="dot" style="background:var(--${color})"></div><strong>${sd[label]||0}</strong>&nbsp;<span style="color:var(--muted)">${label}</span></div>`
+    ).join('');
 
-  el.innerHTML = `
-    <div class="stats-strip">
-      <div class="stat"><div class="stat-val">${m.total_candidates_evaluated?.toLocaleString() ?? '—'}</div><div class="stat-label">Candidates evaluated</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--good)">${m.candidates_passed_filters?.toLocaleString() ?? '—'}</div><div class="stat-label">Passed filters (${passRate}%)</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--warn)">${m.total_rejected?.toLocaleString() ?? '—'}</div><div class="stat-label">Rejected</div></div>
-      <div class="stat"><div class="stat-val" style="color:var(--accent-light)">${topScore}</div><div class="stat-label">Top score</div></div>
-    </div>
+  // Radar for top guide
+  if (candidates.length > 0) renderRadar(candidates[0]);
 
-    <div class="card" style="padding:1rem">
-      <div class="tabs">
-        <div class="tab active" onclick="switchTab(this,'tab-top')">Top ${candidates.length} candidates</div>
-        <div class="tab" onclick="switchTab(this,'tab-meta')">Run metadata</div>
-      </div>
+  // Guide cards (top 5)
+  const top5 = candidates.slice(0, 5);
+  document.getElementById('top-count').textContent = top5.length;
+  document.getElementById('guide-cards').innerHTML = top5.map(renderGuideCard).join('');
+  document.querySelectorAll('.guide-card-header').forEach(h => {
+    h.addEventListener('click', () => h.parentElement.classList.toggle('expanded'));
+  });
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      navigator.clipboard.writeText(btn.dataset.seq).then(() => { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500); });
+    });
+  });
 
-      <div id="tab-top">
-        ${candidates.length === 0
-          ? '<p style="color:var(--muted);font-size:.85rem;text-align:center;padding:2rem">No candidates passed all filters. Try relaxing the GC range or switching Cas variant.</p>'
-          : buildTable(candidates)
-        }
-        <div class="dl-row">
-          <button class="btn-dl" onclick="downloadCSV()">⬇ Download CSV</button>
-          <button class="btn-dl" onclick="downloadJSON()">⬇ Download JSON</button>
-        </div>
-      </div>
-
-      <div id="tab-meta" style="display:none">
-        <table style="font-size:.82rem">
-          ${Object.entries(m).map(([k,v]) => `
-            <tr>
-              <td style="color:var(--muted);padding:.4rem .6rem;white-space:nowrap">${k.replaceAll('_',' ')}</td>
-              <td style="padding:.4rem .6rem;font-family:var(--mono)">${v}</td>
-            </tr>`).join('')}
-        </table>
-      </div>
-    </div>`;
-}
-
-function buildTable(candidates) {
-  const rows = candidates.map((c, i) => {
-    const barW = Math.round(c.final_score * 80);
-    const gcPct = (c.gc_content * 100).toFixed(0);
-    const strandCls = c.strand === '+' ? 'strand-pos' : 'strand-neg';
+  // Full table
+  document.getElementById('all-count').textContent = candidates.length;
+  document.getElementById('results-tbody').innerHTML = candidates.map((c, i) => {
+    const bd = c.score_breakdown || {};
     return `<tr>
-      <td class="rank">${i + 1}</td>
-      <td class="seq" data-tip="${c.chromosome}:${c.start}-${c.end}">${c.sequence}</td>
-      <td class="pam">${c.pam}</td>
-      <td class="${strandCls}">${c.strand}</td>
-      <td class="gc-val">${gcPct}%</td>
-      <td>
-        <div class="score-bar">
-          <div class="bar" style="width:${barW}px"></div>
-          <span class="score-val">${c.final_score.toFixed(3)}</span>
-        </div>
-      </td>
+      <td>${bd.rank || i+1}</td>
+      <td style="color:var(--muted)">${bd.guide_id || ''}</td>
+      <td class="mono" style="color:var(--blue);font-size:12px">${c.sequence}</td>
+      <td class="mono">${c.pam}</td>
+      <td><strong>${c.final_score}</strong></td>
+      <td>${c.on_target_score}</td>
+      <td>${c.off_target_score}</td>
+      <td>${c.consequence_score}</td>
+      <td>${c.confidence_score}</td>
+      <td><span class="safety-badge badge-${c.safety_color}">${c.safety_label}</span></td>
+      <td>${(c.gc_content*100).toFixed(1)}%</td>
+      <td>${c.strand}</td>
+      <td style="color:var(--muted);font-size:12px">${c.chromosome}:${c.start}-${c.end}</td>
     </tr>`;
   }).join('');
-
-  return `
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th>#</th>
-          <th>Spacer sequence (20 nt)</th>
-          <th data-tip="PAM site">PAM</th>
-          <th>Strand</th>
-          <th data-tip="GC content of spacer">GC%</th>
-          <th>Score</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
 }
 
-function switchTab(el, id) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  ['tab-top','tab-meta'].forEach(t => {
-    const el = document.getElementById(t);
-    if (el) el.style.display = t === id ? 'block' : 'none';
+function renderGuideCard(c, i) {
+  const bd = c.score_breakdown || {};
+  const rank = bd.rank || i + 1;
+  const gid = bd.guide_id || `SG-${String(rank).padStart(3,'0')}`;
+  const color = c.safety_color || 'yellow';
+  const scoreColor = c.final_score >= 80 ? 'var(--green)' : c.final_score >= 50 ? 'var(--yellow)' : c.final_score >= 20 ? 'var(--orange)' : 'var(--red)';
+
+  const dims = [
+    { label: 'On-Target', val: c.on_target_score, color: 'var(--blue)' },
+    { label: 'Off-Target', val: c.off_target_score, color: 'var(--purple)' },
+    { label: 'Consequence', val: c.consequence_score, color: 'var(--green)' },
+    { label: 'Confidence', val: c.confidence_score, color: 'var(--yellow)' },
+  ];
+
+  return `<div class="guide-card">
+    <div class="guide-card-header">
+      <div class="guide-rank">#${rank}</div>
+      <div class="guide-id" style="color:var(--muted)">${gid}</div>
+      <div class="guide-seq">${c.sequence}</div>
+      <span class="safety-badge badge-${color}">${c.safety_label}</span>
+      <div class="score-bar-wrap" style="min-width:100px">
+        <div class="score-bar"><div class="score-bar-fill" style="width:${c.final_score}%;background:${scoreColor}"></div></div>
+        <div class="score-val" style="color:${scoreColor}">${c.final_score}</div>
+      </div>
+      <button class="copy-btn" data-seq="${c.sequence}${c.pam}">Copy</button>
+      <div class="expand-icon">▶</div>
+    </div>
+    <div class="guide-card-body">
+      <div class="guide-meta">
+        <div class="meta-item"><div class="key">Sequence</div><div class="val" style="color:var(--blue)">${c.sequence}</div></div>
+        <div class="meta-item"><div class="key">PAM</div><div class="val">${c.pam}</div></div>
+        <div class="meta-item"><div class="key">Position</div><div class="val">${c.chromosome}:${c.start}–${c.end}</div></div>
+        <div class="meta-item"><div class="key">Strand</div><div class="val">${c.strand}</div></div>
+        <div class="meta-item"><div class="key">GC Content</div><div class="val">${(c.gc_content*100).toFixed(1)}%</div></div>
+      </div>
+      <div class="scores-grid">
+        ${dims.map(d => `<div class="score-dim">
+          <div class="dim-label">${d.label}</div>
+          <div class="dim-val" style="color:${d.color}">${d.val}</div>
+          <div class="dim-bar"><div class="dim-bar-fill" style="width:${d.val}%;background:${d.color}"></div></div>
+        </div>`).join('')}
+      </div>
+      <div class="recommendation">${c.recommendation || '—'}</div>
+      <div class="ot-counts">
+        <div class="ot-count"><span>1mm: </span><strong>${c.off_targets_1mm}</strong></div>
+        <div class="ot-count"><span>2mm: </span><strong>${c.off_targets_2mm}</strong></div>
+        <div class="ot-count"><span>3mm: </span><strong>${c.off_targets_3mm}</strong></div>
+        <div class="ot-count"><span>Data tier: </span><strong>${bd.consequence_tier || 'tier1'}</strong></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Radar chart ─────────────────────────────────────────────────────────────
+function renderRadar(c) {
+  const dims = [
+    { label: 'On-Target', val: c.on_target_score / 100 },
+    { label: 'Off-Target', val: c.off_target_score / 100 },
+    { label: 'Consequence', val: c.consequence_score / 100 },
+    { label: 'Confidence', val: c.confidence_score / 100 },
+  ];
+  const N = dims.length;
+  const R = 80;
+  const cx = 0, cy = 0;
+
+  function polar(i, r) {
+    const angle = (Math.PI * 2 * i / N) - Math.PI / 2;
+    return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+  }
+
+  // Grid rings
+  let grid = '';
+  [0.25, 0.5, 0.75, 1].forEach(frac => {
+    const pts = dims.map((_, i) => polar(i, R * frac).join(',')).join(' ');
+    grid += `<polygon points="${pts}" fill="none" stroke="var(--border)" stroke-width="1"/>`;
   });
+
+  // Axes
+  let axes = '';
+  dims.forEach((_, i) => {
+    const [x, y] = polar(i, R);
+    axes += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
+    const [lx, ly] = polar(i, R + 20);
+    axes += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="var(--muted)" font-size="11">${dims[i].label}</text>`;
+  });
+
+  // Data polygon
+  const pts = dims.map((d, i) => polar(i, R * d.val).join(',')).join(' ');
+  const poly = `<polygon points="${pts}" fill="rgba(88,166,255,0.2)" stroke="var(--accent)" stroke-width="2"/>`;
+  const dots = dims.map((d, i) => {
+    const [x, y] = polar(i, R * d.val);
+    return `<circle cx="${x}" cy="${y}" r="4" fill="var(--accent)"/>`;
+  }).join('');
+
+  document.getElementById('radar-svg').innerHTML = grid + axes + poly + dots;
+
+  // Legend
+  const colors = ['var(--blue)', 'var(--purple)', 'var(--green)', 'var(--yellow)'];
+  document.getElementById('radar-legend').innerHTML = dims.map((d, i) =>
+    `<div style="display:flex;align-items:center;gap:8px">
+       <div style="width:10px;height:10px;border-radius:2px;background:${colors[i]}"></div>
+       <span style="color:var(--muted)">${d.label}</span>
+       <strong style="color:${colors[i]}">${Math.round(d.val*100)}</strong>
+     </div>`
+  ).join('');
 }
 
-// ── Downloads ────────────────────────────────────────
-function downloadCSV() {
-  if (!lastResult?.candidates?.length) return;
-  const cols = Object.keys(lastResult.candidates[0]);
-  const lines = [cols.join(','), ...lastResult.candidates.map(r => cols.map(c => r[c]).join(','))];
-  download('snipgen_results.csv', lines.join('\n'), 'text/csv');
-}
-
-function downloadJSON() {
+// ─── Exports ─────────────────────────────────────────────────────────────────
+document.getElementById('export-csv-btn').addEventListener('click', () => {
   if (!lastResult) return;
-  download('snipgen_results.json', JSON.stringify(lastResult, null, 2), 'application/json');
-}
+  const candidates = lastResult.candidates || [];
+  const cols = ['sequence','pam','chromosome','start','end','strand','gc_content',
+                'final_score','on_target_score','off_target_score','consequence_score',
+                'confidence_score','safety_label','off_targets_1mm','off_targets_2mm','off_targets_3mm'];
+  const rows = [cols.join(','), ...candidates.map(c => cols.map(k => JSON.stringify(c[k]??'')).join(','))];
+  downloadBlob(rows.join('\n'), 'snipgen_results.csv', 'text/csv');
+});
 
-function download(name, content, type) {
+document.getElementById('export-json-btn').addEventListener('click', () => {
+  if (!lastResult) return;
+  downloadBlob(JSON.stringify(lastResult, null, 2), 'snipgen_results.json', 'application/json');
+});
+
+function downloadBlob(content, filename, type) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([content], { type }));
-  a.download = name;
-  a.click();
+  a.download = filename; a.click();
+}
+
+// ─── New analysis ─────────────────────────────────────────────────────────────
+document.getElementById('new-analysis-btn').addEventListener('click', () => {
+  hide('dashboard'); show('upload-panel');
+  uploadedFile = null;
+  document.getElementById('filename-label').textContent = '';
+  document.getElementById('run-btn').disabled = true;
+  fileInput.value = '';
+});
+
+// ─── Utils ───────────────────────────────────────────────────────────────────
+function show(id) { document.getElementById(id).style.display = ''; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  if (msg) { box.textContent = '⚠ ' + msg; box.style.display = 'block'; }
+  else { box.style.display = 'none'; }
 }
 </script>
 </body>
