@@ -916,11 +916,31 @@ function renderDashboard(data) {
   const meta = data.metadata || {};
   const candidates = data.candidates || [];
 
-  // Seq info
-  const seqStats = (meta.sequence_stats || [])
+  // Seq info — show max 3 inline, rest in expandable
+  const allStats = (meta.sequence_stats || []);
+  const shown = allStats.slice(0, 3);
+  const hidden = allStats.slice(3);
+  const shownText = shown
     .map(s => `${s.id} · ${s.length.toLocaleString()} bp · GC ${(s.gc_content * 100).toFixed(1)}%`)
-    .join('  ');
-  document.getElementById('seq-info').textContent = seqStats;
+    .join('  ·  ');
+  const seqInfoEl = document.getElementById('seq-info');
+  if (hidden.length === 0) {
+    seqInfoEl.textContent = shownText;
+  } else {
+    const hiddenText = hidden
+      .map(s => `${s.id} · ${s.length.toLocaleString()} bp · GC ${(s.gc_content * 100).toFixed(1)}%`)
+      .join('  ·  ');
+    seqInfoEl.innerHTML =
+      `${shownText}  ` +
+      `<button id="seq-toggle" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:var(--sans);padding:0;font-weight:600;">+${hidden.length} more</button>` +
+      `<span id="seq-hidden" style="display:none">  ·  ${hiddenText}</span>`;
+    document.getElementById('seq-toggle').addEventListener('click', function() {
+      const h = document.getElementById('seq-hidden');
+      const expanded = h.style.display !== 'none';
+      h.style.display = expanded ? 'none' : 'inline';
+      this.textContent = expanded ? `+${hidden.length} more` : 'show less';
+    });
+  }
 
   // Stats
   const sd = meta.safety_distribution || {};
