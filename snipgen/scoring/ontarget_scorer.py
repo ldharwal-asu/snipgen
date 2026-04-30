@@ -1,9 +1,10 @@
 """
-On-target quality scorer — v2 with XGBoost model.
+On-target quality scorer — v2 with sklearn GradientBoostingRegressor model.
 
-Primary path: XGBoost model trained on a biologically-grounded synthetic
+Primary path: sklearn GBR model trained on a biologically-grounded synthetic
 corpus using published Doench 2016 position-specific nucleotide weights
 (NBT Supp. Table 19) as a scoring oracle with calibrated experimental noise.
+sklearn is already a required dependency — no extra bundle size on Vercel.
 
 Fallback: rule-based six-component scorer (used if model file is missing
 or fails to load — ensures the pipeline always produces valid output).
@@ -214,7 +215,7 @@ class OnTargetScorer:
                 ml_raw = float(self._model.predict(feat)[0])
                 ml_score = max(0.0, min(100.0, ml_raw))
                 breakdown["ml_score"] = round(ml_score, 1)
-                breakdown["scorer"] = "xgboost"
+                breakdown["scorer"] = "gradient_boosting_ml"
                 breakdown["model_val_spearman"] = self._model_meta.get("val_spearman", "n/a")
                 return round(ml_score, 1), breakdown
             except Exception as exc:

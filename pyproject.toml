@@ -19,14 +19,13 @@ dependencies = [
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.29.0",
     "python-multipart>=0.0.9",
-    "xgboost>=2.0",
-    "scipy>=1.11",
     "anthropic>=0.25.0",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-cov", "mypy", "ruff"]
-ml  = ["torch>=2.0", "onnxruntime>=1.17"]
+dev     = ["pytest>=8.0", "pytest-cov", "mypy", "ruff"]
+ml      = ["torch>=2.0", "onnxruntime>=1.17"]
+training = ["xgboost>=2.0", "scipy>=1.11"]  # only needed to retrain the model
 
 [project.scripts]
 snipgen = "snipgen.cli:main"
