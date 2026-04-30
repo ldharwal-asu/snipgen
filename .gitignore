@@ -17,9 +17,11 @@ htmlcov/
 .ruff_cache/
 
 *.joblib
-*.pkl
 *.h5
 *.onnx
+# Allow trained model files in snipgen/scoring/models/
+*.pkl
+!snipgen/scoring/models/*.pkl
 
 results/
 /tmp/

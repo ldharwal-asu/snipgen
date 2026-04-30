@@ -1,0 +1,13 @@
+{
+  "n_samples": 15000,
+  "n_features": 97,
+  "train_r2": 0.7386,
+  "val_r2": 0.5873,
+  "val_spearman": 0.7477,
+  "cv_r2_mean": 0.5318,
+  "cv_r2_std": 0.0091,
+  "training_time_s": 2.5,
+  "model_type": "XGBRegressor",
+  "data_source": "Biologically-grounded synthetic corpus. Oracle: Doench 2016 position-specific nucleotide weights (NBT Supp. Table 19) with calibrated Gaussian noise (sigma=14) to reproduce inter-replicate Spearman r~0.50 from the original paper. Replace with experimental data when available.",
+  "seed": 42
+}

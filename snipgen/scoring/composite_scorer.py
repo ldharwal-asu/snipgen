@@ -5,9 +5,9 @@ import logging
 from snipgen.models.grna_candidate import GRNACandidate
 from snipgen.scoring.confidence_scorer import ConfidenceScorer
 from snipgen.scoring.consequence_scorer import ConsequenceScorer
+from snipgen.scoring.llm_recommendation import generate_recommendations_batch
 from snipgen.scoring.offtarget_scorer import OffTargetScorer
 from snipgen.scoring.ontarget_scorer import OnTargetScorer
-from snipgen.scoring.recommendation import generate_recommendation
 
 logger = logging.getLogger("snipgen.scoring.composite_scorer")
 
@@ -106,9 +106,13 @@ class CompositeScorer:
             )
             c.ml_score = 0.5  # V1 compat
 
-        # 7. Natural language recommendations
-        for c in candidates:
-            c.recommendation = generate_recommendation(c)
+        # 7. Natural language recommendations — LLM for top 5, templates for rest
+        generate_recommendations_batch(candidates, max_llm_calls=5)
 
-        logger.info("Scored %d candidates (v2 composite, 4-dimensional)", len(candidates))
+        using_ml = self.on_target_scorer.using_ml_model
+        logger.info(
+            "Scored %d candidates (v2 composite, 4-dimensional, on-target=%s)",
+            len(candidates),
+            "xgboost" if using_ml else "rules",
+        )
         return candidates
