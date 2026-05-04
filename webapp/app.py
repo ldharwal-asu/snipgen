@@ -8,6 +8,8 @@ from typing import Optional
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from snipgen.analysis.isoform_analyzer import analyze_guide_isoforms
+from snipgen.filters.gnomad_filter import check_guide_gnomad
 from snipgen.filters.pam_filter import PAM_REGISTRY
 from snipgen.pipeline import PipelineConfig, SnipGenPipeline
 from webapp.crispor_client import (
@@ -82,7 +84,7 @@ def _fetch_sequence_entrez(gene: str, organism: str) -> tuple[str, str]:
 
 def _run_pipeline(fasta_bytes: bytes, cas_variant: str, guide_length: int,
                   min_gc: float, max_gc: float, top_n: int,
-                  organism: str) -> dict:
+                  organism: str, gene_symbol: str = "") -> dict:
     """
     Run the full SnipGen pipeline. Executed in a background thread by job_queue.
     Returns the JSON-serialisable result dict.
@@ -110,6 +112,44 @@ def _run_pipeline(fasta_bytes: bytes, cas_variant: str, guide_length: int,
             pipeline = SnipGenPipeline(config)
             pipeline.run()
             output = json.loads((Path(out_dir) / "candidates.json").read_text())
+
+        # ── gnomAD + isoform annotation (gene-search mode only) ──────────────
+        gene = (gene_symbol or "").strip().upper()
+        if gene and organism.lower() == "human":
+            candidates = output.get("candidates", [])
+            for c in candidates:
+                seq   = c.get("sequence", "")
+                start = c.get("start", 0)
+                end   = c.get("end", start + len(seq))
+                strand = c.get("strand", "+")
+
+                # gnomAD population SNP check
+                try:
+                    gnomad = check_guide_gnomad(
+                        guide_seq=seq,
+                        gene_symbol=gene,
+                        guide_start_in_mrna=start,
+                        guide_end_in_mrna=end,
+                        strand=strand,
+                        organism=organism,
+                    )
+                    c["gnomad"] = gnomad
+                except Exception:
+                    c["gnomad"] = {"gnomad_checked": False, "flag": "gnomAD check failed"}
+
+            # Isoform analysis — one NCBI call per transcript (shared cache),
+            # one string search per guide. Cap at top 8 guides to stay fast.
+            for c in candidates[:8]:
+                seq = c.get("sequence", "")
+                try:
+                    iso = analyze_guide_isoforms(
+                        guide_seq=seq,
+                        gene_symbol=gene,
+                        organism=organism,
+                    )
+                    c["isoform"] = iso
+                except Exception:
+                    c["isoform"] = {"isoform_checked": False, "flag": "Isoform check failed"}
 
         # Submit to CRISPOR (fire-and-forget — polling happens via /crispor-scores)
         try:
@@ -173,6 +213,7 @@ async def design(
     max_gc: float = Query(0.70, ge=0.0, le=1.0),
     top_n: int = Query(20, ge=1, le=200),
     organism: str = Query("human"),
+    gene_symbol: str = Query("", description="Gene symbol for gnomAD/isoform annotation (optional)"),
 ):
     """
     Accept a FASTA upload, queue the pipeline, return a job_id immediately.
@@ -194,7 +235,7 @@ async def design(
 
     job_id = queue.submit(
         _run_pipeline,
-        fasta_bytes, cas_variant, guide_length, min_gc, max_gc, top_n, organism,
+        fasta_bytes, cas_variant, guide_length, min_gc, max_gc, top_n, organism, gene_symbol,
     )
 
     return JSONResponse({"job_id": job_id, "status": "queued"}, status_code=202)

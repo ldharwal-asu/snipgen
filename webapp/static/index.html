@@ -766,6 +766,10 @@
 
   /* CRISPOR badge */
   .crispor-badge { background: var(--accent-soft); border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 8px; }
+  .gnomad-badge { border: 1.5px solid; border-radius: 6px; padding: 6px 10px; font-size: 12px; margin-top: 6px; }
+  .gnomad-ok   { border-color: var(--green); color: var(--green); background: #f0fdf4; }
+  .gnomad-warn { background: #fffbeb; color: #92400e; }
+  .isoform-badge { border: 1.5px solid; border-radius: 6px; padding: 6px 10px; font-size: 12px; margin-top: 6px; background: #f8faff; }
 
   /* Results table */
   .table-wrap {
@@ -1285,6 +1289,9 @@ async function runAnalysis() {
   setLoadingText('Uploading sequence…', 'Sending to SnipGen server');
 
   const organism = document.getElementById('organism-select')?.value || 'human';
+  const geneForAnnotation = (inputMode === 'gene')
+    ? (document.getElementById('gene-input')?.value || '').trim().toUpperCase()
+    : '';
   const params = new URLSearchParams({
     cas_variant: document.getElementById('cas-variant').value,
     guide_length: document.getElementById('guide-length').value,
@@ -1292,6 +1299,7 @@ async function runAnalysis() {
     max_gc: (parseFloat(document.getElementById('max-gc').value) / 100).toFixed(2),
     top_n: document.getElementById('top-n').value,
     organism,
+    gene_symbol: geneForAnnotation,
   });
 
   try {
@@ -1575,6 +1583,33 @@ function scoreColor(val) {
   return 'var(--red)';
 }
 
+function gnomadBadge(c) {
+  const g = c.gnomad;
+  if (!g || !g.gnomad_checked) return '';
+  if (!g.snp_in_guide) return `
+    <div class="gnomad-badge gnomad-ok">🧬 gnomAD: No common variants in guide region (population-safe)</div>`;
+  const impColor = { HIGH: 'var(--red)', MODERATE: 'var(--orange)', LOW: 'var(--yellow)' }[g.population_impact] || 'var(--muted)';
+  return `<div class="gnomad-badge gnomad-warn" style="border-color:${impColor}">
+    🧬 gnomAD · ${g.population_impact}: ${g.flag}
+    ${g.variant_id ? `<span style="color:var(--muted);margin-left:8px">${g.variant_id} (MAF ${(g.max_maf*100).toFixed(2)}%)</span>` : ''}
+  </div>`;
+}
+
+function isoformBadge(c) {
+  const iso = c.isoform;
+  if (!iso || !iso.isoform_checked) return '';
+  const labelColors = {
+    'PAN-ISOFORM': 'var(--green)', 'BROAD': 'var(--accent)',
+    'SELECTIVE': 'var(--orange)', 'SINGLE': 'var(--red)'
+  };
+  const col = labelColors[iso.specificity_label] || 'var(--muted)';
+  return `<div class="isoform-badge" style="border-color:${col}">
+    🔀 Isoforms: <strong style="color:${col}">${iso.specificity_label}</strong>
+    · ${iso.n_isoforms_targeted}/${iso.n_isoforms_total} transcripts targeted
+    ${iso.isoforms_missed.length ? `<span style="color:var(--muted);font-size:11px"> · missed: ${iso.isoforms_missed.join(', ')}</span>` : ''}
+  </div>`;
+}
+
 function renderGuideCard(c, i) {
   const bd = c.score_breakdown || {};
   const rank = bd.rank || i + 1;
@@ -1629,6 +1664,8 @@ function renderGuideCard(c, i) {
         <div class="ot-tag"><span>3 mm: </span><strong>${c.off_targets_3mm}</strong></div>
         <div class="ot-tag"><span>Data tier: </span><strong>${bd.consequence_tier || 'tier1'}</strong></div>
       </div>
+      ${gnomadBadge(c)}
+      ${isoformBadge(c)}
       ${crisprBadge}
     </div>
   </div>`;

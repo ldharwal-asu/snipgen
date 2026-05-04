@@ -1,13 +1,13 @@
 {
-  "n_samples": 15000,
+  "n_samples": 5310,
+  "n_train": 4248,
+  "n_val": 1062,
   "n_features": 97,
-  "train_r2": 0.6883,
-  "val_r2": 0.5892,
-  "val_spearman": 0.7496,
-  "cv_r2_mean": 0.5308,
-  "cv_r2_std": 0.015,
-  "training_time_s": 12.3,
+  "train_r2": 0.6838,
+  "val_r2": 0.311,
+  "val_spearman": 0.5559,
+  "training_time_s": 4.3,
   "model_type": "GradientBoostingRegressor (sklearn)",
-  "data_source": "Biologically-grounded synthetic corpus. Oracle: Doench 2016 position-specific nucleotide weights (NBT Supp. Table 19) with calibrated Gaussian noise (sigma=14). Replace with experimental data when available.",
+  "data_source": "Azimuth CRISPR screen \u2014 Doench et al. 2016, Nat Biotechnol 34:184-191. 5,310 experimentally measured guides, score_drug_gene_rank column (0-1), rescaled to 0-100. 20-mer extracted from 30-mer context sequence.",
   "seed": 42
 }

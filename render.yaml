@@ -3,7 +3,7 @@ services:
     name: snipgen
     runtime: python
     plan: free
-    buildCommand: pip install -e ".[dev]" && python snipgen/scoring/train_ontarget_model.py
+    buildCommand: pip install -e ".[dev]" && python snipgen/scoring/train_ontarget_real.py
     startCommand: uvicorn webapp.app:app --host 0.0.0.0 --port $PORT --workers 2
     envVars:
       - key: PYTHON_VERSION
