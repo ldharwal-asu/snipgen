@@ -188,6 +188,119 @@
   .drop-zone.has-file .filename-label { display: block; }
   input[type="file"] { display: none; }
 
+  /* ── Input mode tabs ─────────────────────────────────────── */
+  .input-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface2);
+  }
+  .input-tab {
+    flex: 1;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    text-align: center;
+  }
+  .input-tab.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-radius: 7px;
+    margin: 2px;
+  }
+
+  /* ── Gene lookup panel ───────────────────────────────────── */
+  .gene-panel { margin-bottom: 24px; }
+  .gene-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .gene-field { flex: 1; min-width: 140px; }
+  .gene-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .gene-field input, .gene-field select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--surface2);
+    color: var(--text);
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+  }
+  .gene-field input:focus, .gene-field select:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--bg);
+  }
+  .gene-fetch-btn {
+    padding: 9px 18px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+    height: 38px;
+    align-self: flex-end;
+  }
+  .gene-fetch-btn:hover { opacity: 0.88; }
+  .gene-fetch-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .gene-status {
+    margin-top: 10px;
+    font-size: 13px;
+    min-height: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .gene-status.loading { color: var(--muted); }
+  .gene-status.success { color: var(--green); font-weight: 600; }
+  .gene-status.error   { color: var(--red,#e53935); }
+
+  .gene-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .gene-chip {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: var(--mono);
+  }
+  .gene-chip:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
   /* presets */
   .presets-row {
     display: flex;
@@ -717,12 +830,56 @@
     </div>
 
     <div class="upload-card">
-      <div class="drop-zone" id="drop-zone">
-        <div class="drop-zone-icon">🧬</div>
-        <h3>Drop your FASTA file here</h3>
-        <p>or <strong onclick="document.getElementById('file-input').click()">browse to upload</strong> &nbsp;·&nbsp; .fasta .fa .fna .gz</p>
-        <div class="filename-label" id="filename-label"></div>
-        <input type="file" id="file-input" accept=".fasta,.fa,.fna,.gz">
+
+      <!-- Input mode tabs -->
+      <div class="input-tabs">
+        <button class="input-tab active" id="tab-gene" onclick="switchTab('gene')">🔍 Search by Gene</button>
+        <button class="input-tab" id="tab-file" onclick="switchTab('file')">📂 Upload FASTA</button>
+      </div>
+
+      <!-- Gene search panel -->
+      <div class="gene-panel" id="gene-panel">
+        <div class="gene-row">
+          <div class="gene-field">
+            <label>Gene Symbol</label>
+            <input type="text" id="gene-input" placeholder="e.g. TP53, BRCA1, KRAS" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="gene-field" style="max-width:150px">
+            <label>Organism</label>
+            <select id="organism-select">
+              <option value="human">Human</option>
+              <option value="mouse">Mouse</option>
+              <option value="zebrafish">Zebrafish</option>
+              <option value="rat">Rat</option>
+              <option value="drosophila">Drosophila</option>
+              <option value="c_elegans">C. elegans</option>
+            </select>
+          </div>
+          <button class="gene-fetch-btn" id="gene-fetch-btn" onclick="fetchGene()">Fetch →</button>
+        </div>
+        <div class="gene-status" id="gene-status"></div>
+        <div class="gene-chips">
+          <span style="font-size:11px;color:var(--muted);font-weight:600;align-self:center;margin-right:4px">Common:</span>
+          <span class="gene-chip" onclick="quickGene('TP53')">TP53</span>
+          <span class="gene-chip" onclick="quickGene('BRCA1')">BRCA1</span>
+          <span class="gene-chip" onclick="quickGene('KRAS')">KRAS</span>
+          <span class="gene-chip" onclick="quickGene('EGFR')">EGFR</span>
+          <span class="gene-chip" onclick="quickGene('PTEN')">PTEN</span>
+          <span class="gene-chip" onclick="quickGene('HBB')">HBB</span>
+          <span class="gene-chip" onclick="quickGene('PCSK9')">PCSK9</span>
+          <span class="gene-chip" onclick="quickGene('DMD')">DMD</span>
+        </div>
+      </div>
+
+      <!-- File upload panel -->
+      <div id="file-panel" style="display:none">
+        <div class="drop-zone" id="drop-zone">
+          <div class="drop-zone-icon">🧬</div>
+          <h3>Drop your FASTA file here</h3>
+          <p>or <strong onclick="document.getElementById('file-input').click()">browse to upload</strong> &nbsp;·&nbsp; .fasta .fa .fna .gz</p>
+          <div class="filename-label" id="filename-label"></div>
+          <input type="file" id="file-input" accept=".fasta,.fa,.fna,.gz">
+        </div>
       </div>
 
       <div class="presets-label">Strictness Preset</div>
@@ -840,15 +997,76 @@
 
 <script>
 // ── State ──────────────────────────────────────────────────────
-let uploadedFile = null;
-let lastResult = null;
+let uploadedFile  = null;
+let fetchedFasta  = null;   // FASTA text returned by /fetch-gene
+let inputMode     = 'gene'; // 'gene' | 'file'
+let lastResult    = null;
+
+// ── Tab switching ──────────────────────────────────────────────
+function switchTab(mode) {
+  inputMode = mode;
+  document.getElementById('tab-gene').classList.toggle('active', mode === 'gene');
+  document.getElementById('tab-file').classList.toggle('active', mode === 'file');
+  document.getElementById('gene-panel').style.display = mode === 'gene' ? '' : 'none';
+  document.getElementById('file-panel').style.display = mode === 'file' ? '' : 'none';
+  // re-evaluate run button
+  updateRunBtn();
+}
+
+function updateRunBtn() {
+  const ready = (inputMode === 'gene' && fetchedFasta) ||
+                (inputMode === 'file' && uploadedFile);
+  document.getElementById('run-btn').disabled = !ready;
+}
+
+// ── Gene lookup ────────────────────────────────────────────────
+function quickGene(symbol) {
+  document.getElementById('gene-input').value = symbol;
+  fetchGene();
+}
+
+// Allow Enter key in gene input
+document.getElementById('gene-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') fetchGene();
+});
+
+async function fetchGene() {
+  const gene     = document.getElementById('gene-input').value.trim();
+  const organism = document.getElementById('organism-select').value;
+  if (!gene) return;
+
+  const statusEl = document.getElementById('gene-status');
+  const fetchBtn = document.getElementById('gene-fetch-btn');
+  fetchedFasta = null;
+  updateRunBtn();
+
+  statusEl.className = 'gene-status loading';
+  statusEl.textContent = '⏳ Fetching from NCBI…';
+  fetchBtn.disabled = true;
+
+  try {
+    const resp = await fetch(`/fetch-gene?gene=${encodeURIComponent(gene)}&organism=${organism}`);
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.detail || resp.statusText);
+
+    fetchedFasta = data.fasta;
+    statusEl.className = 'gene-status success';
+    statusEl.innerHTML = `✓ ${data.gene} — ${data.accession} — ${data.length.toLocaleString()} bp`;
+    updateRunBtn();
+  } catch (err) {
+    statusEl.className = 'gene-status error';
+    statusEl.textContent = '✗ ' + err.message;
+  } finally {
+    fetchBtn.disabled = false;
+  }
+}
 
 // ── Upload / drag-drop ─────────────────────────────────────────
 const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
 
 dropZone.addEventListener('click', e => {
-  if (e.target.tagName === 'STRONG') return; // handled by onclick
+  if (e.target.tagName === 'STRONG') return;
   fileInput.click();
 });
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
@@ -864,7 +1082,7 @@ function setFile(f) {
   uploadedFile = f;
   document.getElementById('filename-label').textContent = '✓ ' + f.name;
   dropZone.classList.add('has-file');
-  document.getElementById('run-btn').disabled = false;
+  updateRunBtn();
 }
 
 // ── Presets ────────────────────────────────────────────────────
@@ -879,12 +1097,8 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
 document.getElementById('run-btn').addEventListener('click', runAnalysis);
 
 async function runAnalysis() {
-  if (!uploadedFile) return;
   showError('');
   showEl('loading'); hideEl('upload-panel'); hideEl('dashboard');
-
-  const fd = new FormData();
-  fd.append('file', uploadedFile);
 
   const params = new URLSearchParams({
     cas_variant: document.getElementById('cas-variant').value,
@@ -894,8 +1108,25 @@ async function runAnalysis() {
     top_n: document.getElementById('top-n').value,
   });
 
+  let resp;
   try {
-    const resp = await fetch('/design?' + params, { method: 'POST', body: fd });
+    if (inputMode === 'gene' && fetchedFasta) {
+      // Send FASTA text as a form-encoded file blob
+      const blob = new Blob([fetchedFasta], { type: 'text/plain' });
+      const fd = new FormData();
+      const gene = document.getElementById('gene-input').value.trim();
+      fd.append('file', blob, `${gene}.fasta`);
+      resp = await fetch('/design?' + params, { method: 'POST', body: fd });
+    } else if (inputMode === 'file' && uploadedFile) {
+      const fd = new FormData();
+      fd.append('file', uploadedFile);
+      resp = await fetch('/design?' + params, { method: 'POST', body: fd });
+    } else {
+      hideEl('loading'); showEl('upload-panel');
+      showError('Please fetch a gene or upload a FASTA file first.');
+      return;
+    }
+
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ detail: resp.statusText }));
       throw new Error(err.detail || resp.statusText);
@@ -1148,11 +1379,19 @@ function downloadBlob(content, filename, type) {
 document.getElementById('new-analysis-btn').addEventListener('click', () => {
   hideEl('dashboard');
   showEl('upload-panel');
+  // Reset file mode
   uploadedFile = null;
   document.getElementById('filename-label').textContent = '';
   dropZone.classList.remove('has-file');
-  document.getElementById('run-btn').disabled = true;
   fileInput.value = '';
+  // Reset gene mode
+  fetchedFasta = null;
+  document.getElementById('gene-input').value = '';
+  const statusEl = document.getElementById('gene-status');
+  statusEl.className = 'gene-status';
+  statusEl.textContent = '';
+  // Back to gene tab
+  switchTab('gene');
 });
 
 // ── Utils ──────────────────────────────────────────────────────
