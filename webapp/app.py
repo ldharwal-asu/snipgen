@@ -11,6 +11,11 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from snipgen.filters.pam_filter import PAM_REGISTRY
 from snipgen.pipeline import PipelineConfig, SnipGenPipeline
+from webapp.crispor_client import (
+    submit_sequence as crispor_submit,
+    fetch_scores as crispor_fetch,
+    crispor_to_offtarget_score,
+)
 
 app = FastAPI(title="SnipGen", description="AI-driven CRISPR guide RNA design")
 
@@ -21,7 +26,6 @@ _static = Path(__file__).resolve().parent / "static"
 _ENTREZ_EMAIL = "snipgen-tool@noreply.asu.edu"
 
 # Gene → RefSeq mRNA accession for well-known human/mouse genes
-# Used as a fast-path before falling back to Entrez search
 _GENE_ACCESSIONS: dict[str, dict[str, str]] = {
     "human": {
         "TP53":   "NM_000546",
@@ -52,40 +56,28 @@ _GENE_ACCESSIONS: dict[str, dict[str, str]] = {
 }
 
 ORGANISM_TAXIDS = {
-    "human": "9606",
-    "mouse": "10090",
-    "zebrafish": "7955",
-    "rat": "10116",
+    "human":      "9606",
+    "mouse":      "10090",
+    "zebrafish":  "7955",
+    "rat":        "10116",
     "drosophila": "7227",
-    "c_elegans": "6239",
+    "c_elegans":  "6239",
 }
 
 
 def _fetch_sequence_entrez(gene: str, organism: str) -> tuple[str, str]:
-    """
-    Fetch mRNA/CDS sequence for a gene via NCBI Entrez.
-
-    Returns (fasta_text, accession) or raises ValueError with a user-friendly message.
-
-    Strategy:
-      1. Check _GENE_ACCESSIONS fast-path (known human/mouse genes)
-      2. Fall back to Entrez esearch on gene symbol + organism
-      3. Fetch first hit via efetch (FASTA format)
-      4. Trim to coding sequence region if CDS annotation present
-    """
+    """Fetch mRNA sequence for a gene via NCBI Entrez. Returns (fasta_text, accession)."""
     from Bio import Entrez, SeqIO
     Entrez.email = _ENTREZ_EMAIL
     Entrez.tool  = "snipgen"
 
     accession: Optional[str] = None
-
-    # Fast-path lookup
-    org_lower = organism.lower()
+    org_lower  = organism.lower()
     gene_upper = gene.upper()
+
     if org_lower in _GENE_ACCESSIONS and gene_upper in _GENE_ACCESSIONS[org_lower]:
         accession = _GENE_ACCESSIONS[org_lower][gene_upper]
 
-    # Entrez search fallback
     if accession is None:
         taxid = ORGANISM_TAXIDS.get(org_lower, "9606")
         search_term = f"{gene}[Gene Name] AND {taxid}[Taxonomy ID] AND mRNA[Filter] AND RefSeq[Filter]"
@@ -94,23 +86,22 @@ def _fetch_sequence_entrez(gene: str, organism: str) -> tuple[str, str]:
             record = Entrez.read(handle)
             handle.close()
         except Exception as exc:
-            raise ValueError(f"NCBI search failed: {exc}. Check your internet connection.")
+            raise ValueError(f"NCBI search failed: {exc}.")
 
         ids = record.get("IdList", [])
         if not ids:
             raise ValueError(
                 f"No RefSeq mRNA found for '{gene}' in {organism}. "
-                "Check the gene symbol spelling (e.g. 'TP53' not 'tp53')."
+                "Check the gene symbol spelling."
             )
-        accession = ids[0]  # best hit
+        accession = ids[0]
 
-    # Fetch FASTA
     try:
         handle = Entrez.efetch(db="nuccore", id=accession, rettype="fasta", retmode="text")
         fasta_text = handle.read()
         handle.close()
     except Exception as exc:
-        raise ValueError(f"NCBI sequence fetch failed for {accession}: {exc}")
+        raise ValueError(f"NCBI fetch failed for {accession}: {exc}")
 
     if not fasta_text.strip():
         raise ValueError(f"Empty sequence returned for {accession}.")
@@ -125,25 +116,17 @@ async def root():
 
 @app.get("/variants")
 async def list_variants():
-    """Return all supported Cas variants."""
     return {
-        variant: {
-            "pattern": cfg["pattern"],
-            "position": cfg["position"],
-        }
+        variant: {"pattern": cfg["pattern"], "position": cfg["position"]}
         for variant, cfg in PAM_REGISTRY.items()
     }
 
 
 @app.get("/fetch-gene")
 async def fetch_gene(
-    gene: str = Query(..., description="Gene symbol e.g. TP53"),
-    organism: str = Query("human", description="Organism: human, mouse, zebrafish, rat"),
+    gene: str = Query(...),
+    organism: str = Query("human"),
 ):
-    """
-    Fetch a gene's mRNA sequence from NCBI and return it as FASTA text.
-    Used by the frontend to auto-populate the sequence input.
-    """
     gene = gene.strip()
     if not gene:
         raise HTTPException(400, "gene parameter is required")
@@ -155,7 +138,7 @@ async def fetch_gene(
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     except Exception as exc:
-        raise HTTPException(500, f"Unexpected error fetching gene: {exc}")
+        raise HTTPException(500, f"Unexpected error: {exc}")
 
     return JSONResponse({
         "gene":      gene,
@@ -166,31 +149,60 @@ async def fetch_gene(
     })
 
 
+@app.get("/crispor-scores")
+async def crispor_scores(batch_id: str = Query(...)):
+    """
+    Poll CRISPOR for off-target results.
+
+    Returns {"status": "pending"} if not ready yet.
+    Returns {"status": "ready", "scores": {...}} when complete.
+
+    Frontend should call this every 5 s after receiving a crispor_batch_id
+    from /design.
+    """
+    if not batch_id or not batch_id.isalnum() or len(batch_id) > 30:
+        raise HTTPException(400, "Invalid batch_id")
+
+    scores = crispor_fetch(batch_id)
+    if scores is None:
+        return JSONResponse({"status": "pending"})
+
+    # Convert each guide's raw CRISPOR data to SnipGen off-target score
+    converted = {}
+    for guide_seq, data in scores.items():
+        converted[guide_seq] = {
+            **data,
+            "snipgen_offtarget_score": crispor_to_offtarget_score(data),
+        }
+
+    return JSONResponse({"status": "ready", "scores": converted})
+
+
 @app.post("/design")
 async def design(
-    file: UploadFile = File(None, description="FASTA file (optional if gene_fasta provided)"),
-    gene_fasta: Optional[str] = Query(None, description="Raw FASTA text from /fetch-gene"),
+    file: UploadFile = File(None),
     cas_variant: str = Query("SpCas9"),
     guide_length: int = Query(20, ge=17, le=25),
     min_gc: float = Query(0.40, ge=0.0, le=1.0),
     max_gc: float = Query(0.70, ge=0.0, le=1.0),
     top_n: int = Query(20, ge=1, le=200),
+    organism: str = Query("human"),
 ):
-    """Run the SnipGen pipeline on an uploaded FASTA file or inline FASTA text."""
+    """Run the SnipGen pipeline. Also submits to CRISPOR for real off-target scoring."""
     if cas_variant not in PAM_REGISTRY:
         raise HTTPException(400, f"Unknown Cas variant '{cas_variant}'")
     if min_gc >= max_gc:
         raise HTTPException(400, "min_gc must be less than max_gc")
-    if file is None and not gene_fasta:
-        raise HTTPException(400, "Provide either a file upload or gene_fasta text")
+    if file is None:
+        raise HTTPException(400, "Provide a FASTA file")
 
-    # Write FASTA to temp file (from upload or inline text)
+    raw_bytes = await file.read()
+
     with tempfile.NamedTemporaryFile(suffix=".fasta", delete=False, mode="wb") as tmp:
-        if file is not None:
-            tmp.write(await file.read())
-        else:
-            tmp.write(gene_fasta.encode())
+        tmp.write(raw_bytes)
         tmp_path = Path(tmp.name)
+
+    crispor_batch_id: Optional[str] = None
 
     try:
         with tempfile.TemporaryDirectory() as out_dir:
@@ -209,6 +221,18 @@ async def design(
 
             json_path = Path(out_dir) / "candidates.json"
             output = json.loads(json_path.read_text())
+
+        # ── Submit to CRISPOR for real off-target search (fire-and-forget) ──
+        # This is fast (<1s) — just submits the sequence and gets a batchId.
+        # Results come back via polling /crispor-scores.
+        try:
+            fasta_text = raw_bytes.decode("utf-8", errors="replace")
+            crispor_batch_id = crispor_submit(fasta_text, organism, cas_variant)
+        except Exception:
+            crispor_batch_id = None   # CRISPOR unavailable — degrade gracefully
+
+        output["crispor_batch_id"] = crispor_batch_id
+        output["crispor_genome"]   = organism
 
     except Exception as exc:
         raise HTTPException(500, str(exc))

@@ -939,6 +939,12 @@
       <button class="btn-ghost" id="new-analysis-btn">← New Analysis</button>
     </div>
 
+    <!-- CRISPOR live update banner -->
+    <div id="crispor-banner" style="display:none;align-items:center;gap:10px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:var(--accent);font-weight:600;">
+      <span style="font-size:16px">🔬</span>
+      <span class="crispor-banner-text"></span>
+    </div>
+
     <!-- Stats -->
     <div class="stats-row" id="stats-row"></div>
 
@@ -1100,18 +1106,19 @@ async function runAnalysis() {
   showError('');
   showEl('loading'); hideEl('upload-panel'); hideEl('dashboard');
 
+  const organism = document.getElementById('organism-select')?.value || 'human';
   const params = new URLSearchParams({
     cas_variant: document.getElementById('cas-variant').value,
     guide_length: document.getElementById('guide-length').value,
     min_gc: (parseFloat(document.getElementById('min-gc').value) / 100).toFixed(2),
     max_gc: (parseFloat(document.getElementById('max-gc').value) / 100).toFixed(2),
     top_n: document.getElementById('top-n').value,
+    organism,
   });
 
   let resp;
   try {
     if (inputMode === 'gene' && fetchedFasta) {
-      // Send FASTA text as a form-encoded file blob
       const blob = new Blob([fetchedFasta], { type: 'text/plain' });
       const fd = new FormData();
       const gene = document.getElementById('gene-input').value.trim();
@@ -1135,11 +1142,95 @@ async function runAnalysis() {
     renderDashboard(lastResult);
     hideEl('loading');
     showEl('dashboard');
+
+    // ── Start CRISPOR polling if we got a batch_id ──────────
+    if (lastResult.crispor_batch_id) {
+      startCrisprPolling(lastResult.crispor_batch_id);
+    }
   } catch (err) {
     hideEl('loading');
     showEl('upload-panel');
     showError(err.message);
   }
+}
+
+// ── CRISPOR real off-target polling ───────────────────────────
+let _crisprPollTimer = null;
+let _crisprPollCount = 0;
+const _CRISPOR_MAX_POLLS = 18;   // give up after ~90 s
+
+function startCrisprPolling(batchId) {
+  clearInterval(_crisprPollTimer);
+  _crisprPollCount = 0;
+
+  // Show a live banner below the stats row
+  const banner = document.getElementById('crispor-banner');
+  if (banner) {
+    banner.style.display = 'flex';
+    banner.querySelector('.crispor-banner-text').textContent =
+      '🔬 Fetching real genome-wide off-target scores from CRISPOR…';
+  }
+
+  _crisprPollTimer = setInterval(async () => {
+    _crisprPollCount++;
+    if (_crisprPollCount > _CRISPOR_MAX_POLLS) {
+      clearInterval(_crisprPollTimer);
+      if (banner) {
+        banner.querySelector('.crispor-banner-text').textContent =
+          '⚠️ CRISPOR timed out — showing estimated off-target scores.';
+        setTimeout(() => { banner.style.display = 'none'; }, 4000);
+      }
+      return;
+    }
+
+    try {
+      const resp = await fetch(`/crispor-scores?batch_id=${encodeURIComponent(batchId)}`);
+      const data = await resp.json();
+      if (data.status === 'ready') {
+        clearInterval(_crisprPollTimer);
+        applyCrisprScores(data.scores);
+        if (banner) {
+          banner.querySelector('.crispor-banner-text').textContent =
+            '✅ Real genome-wide off-target scores applied (CRISPOR / Cas-OFFinder)';
+          setTimeout(() => { banner.style.display = 'none'; }, 5000);
+        }
+      }
+    } catch (_) { /* network glitch — retry next tick */ }
+  }, 5000);
+}
+
+function applyCrisprScores(scores) {
+  if (!lastResult || !lastResult.candidates) return;
+
+  // Update lastResult in-place so CSV/JSON exports also get real scores
+  lastResult.candidates.forEach(c => {
+    const guide = (c.sequence || '').toUpperCase();
+    const hit   = scores[guide];
+    if (!hit) return;
+
+    c.crispor_mit_score     = hit.mit_score;
+    c.crispor_cfd_score     = hit.cfd_score;
+    c.crispor_ot_count      = hit.ot_count;
+    c.crispor_gene_locus    = hit.gene_locus;
+    c.crispor_ot_0mm        = hit.ot_0mm;
+    c.crispor_ot_1mm        = hit.ot_1mm;
+    c.crispor_ot_2mm        = hit.ot_2mm;
+    c.crispor_offtarget_score = hit.snipgen_offtarget_score;
+
+    // Overwrite the heuristic off-target score with the real one
+    if (c.score_breakdown) {
+      c.score_breakdown.crispor_mit      = hit.mit_score;
+      c.score_breakdown.crispor_cfd      = hit.cfd_score;
+      c.score_breakdown.crispor_ot_count = hit.ot_count;
+      c.score_breakdown.crispor_gene_locus = hit.gene_locus || '—';
+      c.score_breakdown.crispor_ot_0mm   = hit.ot_0mm;
+      c.score_breakdown.crispor_ot_1mm   = hit.ot_1mm;
+      c.score_breakdown.off_target       = hit.snipgen_offtarget_score;
+    }
+  });
+
+  // Re-render dashboard with updated scores
+  renderDashboard(lastResult);
 }
 
 // ── Render dashboard ───────────────────────────────────────────
@@ -1377,6 +1468,11 @@ function downloadBlob(content, filename, type) {
 
 // ── New analysis ───────────────────────────────────────────────
 document.getElementById('new-analysis-btn').addEventListener('click', () => {
+  // Stop any in-progress CRISPOR polling
+  if (_crisprPollTimer) { clearInterval(_crisprPollTimer); _crisprPollTimer = null; }
+  const banner = document.getElementById('crispor-banner');
+  if (banner) banner.style.display = 'none';
+
   hideEl('dashboard');
   showEl('upload-panel');
   // Reset file mode
