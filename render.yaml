@@ -3,8 +3,10 @@ services:
     name: snipgen
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt && pip install -e .
-    startCommand: uvicorn webapp.app:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -e ".[dev]" && python snipgen/scoring/train_ontarget_model.py
+    startCommand: uvicorn webapp.app:app --host 0.0.0.0 --port $PORT --workers 2
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: ANTHROPIC_API_KEY
+        sync: false   # set manually in Render dashboard

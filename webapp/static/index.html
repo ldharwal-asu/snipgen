@@ -925,8 +925,9 @@
   <!-- ── Loading ────────────────────────────────────────────── -->
   <div id="loading">
     <div class="loading-ring"></div>
-    <div class="loading-text">Designing guide RNAs…</div>
-    <div class="loading-sub">Running filter chain &amp; safety scorer</div>
+    <div class="loading-text" id="loading-text">Designing guide RNAs…</div>
+    <div class="loading-sub" id="loading-sub">Submitting job…</div>
+    <div id="loading-progress" style="margin-top:16px;font-size:12px;color:var(--muted);font-family:var(--mono)"></div>
   </div>
 
   <!-- ── Dashboard ─────────────────────────────────────────── -->
@@ -1105,6 +1106,7 @@ document.getElementById('run-btn').addEventListener('click', runAnalysis);
 async function runAnalysis() {
   showError('');
   showEl('loading'); hideEl('upload-panel'); hideEl('dashboard');
+  setLoadingText('Uploading sequence…', 'Sending to SnipGen server');
 
   const organism = document.getElementById('organism-select')?.value || 'human';
   const params = new URLSearchParams({
@@ -1116,42 +1118,96 @@ async function runAnalysis() {
     organism,
   });
 
-  let resp;
   try {
+    // ── Build form data ───────────────────────────────────────
+    const fd = new FormData();
     if (inputMode === 'gene' && fetchedFasta) {
-      const blob = new Blob([fetchedFasta], { type: 'text/plain' });
-      const fd = new FormData();
       const gene = document.getElementById('gene-input').value.trim();
-      fd.append('file', blob, `${gene}.fasta`);
-      resp = await fetch('/design?' + params, { method: 'POST', body: fd });
+      fd.append('file', new Blob([fetchedFasta], { type: 'text/plain' }), `${gene}.fasta`);
     } else if (inputMode === 'file' && uploadedFile) {
-      const fd = new FormData();
       fd.append('file', uploadedFile);
-      resp = await fetch('/design?' + params, { method: 'POST', body: fd });
     } else {
       hideEl('loading'); showEl('upload-panel');
       showError('Please fetch a gene or upload a FASTA file first.');
       return;
     }
 
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ detail: resp.statusText }));
-      throw new Error(err.detail || resp.statusText);
+    // ── POST /design → get job_id ─────────────────────────────
+    const submitResp = await fetch('/design?' + params, { method: 'POST', body: fd });
+    if (!submitResp.ok) {
+      const err = await submitResp.json().catch(() => ({ detail: submitResp.statusText }));
+      throw new Error(err.detail || submitResp.statusText);
     }
-    lastResult = await resp.json();
-    renderDashboard(lastResult);
-    hideEl('loading');
-    showEl('dashboard');
+    const { job_id } = await submitResp.json();
+    setLoadingText('Designing guide RNAs…', 'Job queued — pipeline starting');
 
-    // ── Start CRISPOR polling if we got a batch_id ──────────
-    if (lastResult.crispor_batch_id) {
-      startCrisprPolling(lastResult.crispor_batch_id);
-    }
+    // ── Poll GET /job/{job_id} until done ─────────────────────
+    await pollJob(job_id);
+
   } catch (err) {
     hideEl('loading');
     showEl('upload-panel');
     showError(err.message);
   }
+}
+
+function setLoadingText(main, sub) {
+  const mt = document.getElementById('loading-text');
+  const st = document.getElementById('loading-sub');
+  const pr = document.getElementById('loading-progress');
+  if (mt) mt.textContent = main;
+  if (st) st.textContent = sub;
+  if (pr) pr.textContent = '';
+}
+
+async function pollJob(jobId) {
+  const MAX_POLLS = 180;   // 3 minutes at 1s intervals — handles chromosome-scale
+  let count = 0;
+  const startTs = Date.now();
+
+  return new Promise((resolve, reject) => {
+    const timer = setInterval(async () => {
+      count++;
+      if (count > MAX_POLLS) {
+        clearInterval(timer);
+        hideEl('loading'); showEl('upload-panel');
+        showError('Pipeline timed out after 3 minutes. Try a shorter sequence or fewer guides.');
+        reject(new Error('timeout'));
+        return;
+      }
+
+      try {
+        const resp = await fetch(`/job/${jobId}`);
+        if (!resp.ok) { clearInterval(timer); reject(new Error('Job lost')); return; }
+        const job = await resp.json();
+
+        const elapsed = ((Date.now() - startTs) / 1000).toFixed(0);
+        const pr = document.getElementById('loading-progress');
+        if (pr) pr.textContent = `${elapsed}s elapsed · ${job.progress}`;
+
+        if (job.status === 'done') {
+          clearInterval(timer);
+          lastResult = job.result;
+          renderDashboard(lastResult);
+          hideEl('loading');
+          showEl('dashboard');
+          if (lastResult.crispor_batch_id) startCrisprPolling(lastResult.crispor_batch_id);
+          resolve();
+
+        } else if (job.status === 'failed') {
+          clearInterval(timer);
+          hideEl('loading'); showEl('upload-panel');
+          showError(job.error || 'Pipeline failed');
+          reject(new Error(job.error));
+
+        } else {
+          // queued / running — update progress text
+          const sub = document.getElementById('loading-sub');
+          if (sub) sub.textContent = job.progress;
+        }
+      } catch (_) { /* network glitch — keep polling */ }
+    }, 1000);
+  });
 }
 
 // ── CRISPOR real off-target polling ───────────────────────────
