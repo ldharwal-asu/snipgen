@@ -82,7 +82,7 @@ def _fetch_sequence_entrez(gene: str, organism: str) -> tuple[str, str]:
 
 def _run_pipeline(fasta_bytes: bytes, cas_variant: str, guide_length: int,
                   min_gc: float, max_gc: float, top_n: int,
-                  organism: str, job_id: str) -> dict:
+                  organism: str) -> dict:
     """
     Run the full SnipGen pipeline. Executed in a background thread by job_queue.
     Returns the JSON-serialisable result dict.
@@ -96,7 +96,6 @@ def _run_pipeline(fasta_bytes: bytes, cas_variant: str, guide_length: int,
     crispor_batch_id: Optional[str] = None
 
     try:
-        queue.update_progress(job_id, "Running filter chain & safety scorer…")
         with tempfile.TemporaryDirectory() as out_dir:
             config = PipelineConfig(
                 fasta_path=tmp_path,
@@ -113,7 +112,6 @@ def _run_pipeline(fasta_bytes: bytes, cas_variant: str, guide_length: int,
             output = json.loads((Path(out_dir) / "candidates.json").read_text())
 
         # Submit to CRISPOR (fire-and-forget — polling happens via /crispor-scores)
-        queue.update_progress(job_id, "Submitting to CRISPOR for genome-wide off-target search…")
         try:
             crispor_batch_id = crispor_submit(fasta_text, organism, cas_variant)
         except Exception:
@@ -196,7 +194,7 @@ async def design(
 
     job_id = queue.submit(
         _run_pipeline,
-        fasta_bytes, cas_variant, guide_length, min_gc, max_gc, top_n, organism, # args
+        fasta_bytes, cas_variant, guide_length, min_gc, max_gc, top_n, organism,
     )
 
     return JSONResponse({"job_id": job_id, "status": "queued"}, status_code=202)
