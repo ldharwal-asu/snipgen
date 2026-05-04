@@ -6,7 +6,7 @@
 <title>SnipGen — CRISPR Guide RNA Design</title>
 <style>
   :root {
-    --bg: #f8f9fb;
+    --bg: #f0f4ff;
     --surface: #ffffff;
     --surface2: #f3f4f6;
     --border: #e5e7eb;
@@ -15,9 +15,10 @@
     --text-2: #374151;
     --muted: #6b7280;
     --muted-light: #9ca3af;
-    --accent: #2563eb;
-    --accent-hover: #1d4ed8;
-    --accent-soft: #eff6ff;
+    --accent: #1d4ed8;
+    --accent-mid: #3b82f6;
+    --accent-hover: #1e40af;
+    --accent-soft: #dbeafe;
     --green: #059669;
     --green-soft: #ecfdf5;
     --yellow: #d97706;
@@ -47,8 +48,8 @@
 
   /* ── Header ─────────────────────────────────────────────── */
   header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+    border-bottom: none;
     padding: 0 32px;
     height: 56px;
     display: flex;
@@ -62,7 +63,7 @@
   .header-left { display: flex; align-items: center; gap: 10px; }
   .logo-icon {
     width: 28px; height: 28px;
-    background: var(--accent);
+    background: rgba(255,255,255,0.2);
     border-radius: 7px;
     display: flex; align-items: center; justify-content: center;
   }
@@ -70,15 +71,15 @@
   header h1 {
     font-size: 15px;
     font-weight: 700;
-    color: var(--text);
+    color: #fff;
     letter-spacing: -0.2px;
   }
   .header-badge {
     font-size: 11px;
     font-weight: 600;
-    color: var(--muted);
-    background: var(--surface2);
-    border: 1px solid var(--border);
+    color: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
     border-radius: 20px;
     padding: 2px 9px;
     letter-spacing: 0.2px;
@@ -86,46 +87,41 @@
   .header-right { display: flex; align-items: center; gap: 8px; }
   .header-link {
     font-size: 13px;
-    color: var(--muted);
+    color: rgba(255,255,255,0.75);
     text-decoration: none;
     padding: 5px 10px;
     border-radius: var(--radius-sm);
     transition: background 0.15s, color 0.15s;
   }
-  .header-link:hover { background: var(--surface2); color: var(--text); }
+  .header-link:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
   /* ── Layout ──────────────────────────────────────────────── */
   .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
 
   /* ── Upload Panel ────────────────────────────────────────── */
   #upload-panel { animation: fadeIn 0.3s ease; }
-  .upload-hero {
-    text-align: center;
-    padding: 48px 0 36px;
-  }
-  .upload-hero .eyebrow {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 12px;
-  }
-  .upload-hero h2 {
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text);
-    letter-spacing: -0.5px;
-    margin-bottom: 10px;
-    line-height: 1.3;
-  }
-  .upload-hero p {
-    color: var(--muted);
-    font-size: 15px;
-    max-width: 480px;
-    margin: 0 auto;
-    line-height: 1.65;
-  }
+
+  /* ── Hero section ────────────────────────────────────────── */
+  .hero-section { max-width: 820px; margin: 0 auto 36px; text-align: center; padding-top: 32px; }
+  .hero-badge { display: inline-block; background: var(--accent-soft); color: var(--accent); border: 1px solid #bfdbfe; border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 700; margin-bottom: 16px; letter-spacing: 0.3px; }
+  .hero-title { font-size: 32px; font-weight: 800; letter-spacing: -0.8px; color: var(--text); margin-bottom: 12px; line-height: 1.25; }
+  .hero-sub { font-size: 15px; color: var(--muted); max-width: 560px; margin: 0 auto 28px; line-height: 1.7; }
+
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; text-align: left; }
+  .compare-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 20px; }
+  .compare-card.compare-good { border-color: var(--accent); background: var(--accent-soft); }
+  .compare-label { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 12px; }
+  .compare-good .compare-label { color: var(--accent); }
+  .compare-card ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .compare-card li { font-size: 13px; color: var(--text-2); }
+  .compare-good li { color: var(--text); font-weight: 500; }
+
+  .steps-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; justify-content: center; flex-wrap: wrap; }
+  .step-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 160px; max-width: 220px; text-align: center; }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+  .step-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .step-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .step-arrow { font-size: 20px; color: var(--accent); font-weight: 300; }
 
   .upload-card {
     background: var(--surface);
@@ -349,6 +345,8 @@
     color: var(--muted);
     letter-spacing: 0.3px;
     text-transform: uppercase;
+    display: flex;
+    align-items: center;
   }
   .control-group select,
   .control-group input[type="number"] {
@@ -366,7 +364,7 @@
   .control-group select:focus,
   .control-group input[type="number"]:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    box-shadow: 0 0 0 3px rgba(29,78,216,0.1);
   }
 
   /* buttons */
@@ -409,6 +407,34 @@
     padding: 5px 12px;
     font-size: 12px;
   }
+
+  /* ── Tooltip system ──────────────────────────────────────── */
+  .info-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--surface2); border: 1px solid var(--border);
+    font-size: 10px; color: var(--muted); cursor: pointer;
+    margin-left: 5px; font-style: normal; font-weight: 700;
+    transition: background 0.15s, color 0.15s; flex-shrink: 0;
+    vertical-align: middle;
+  }
+  .info-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .tooltip-wrap { position: relative; display: inline-flex; align-items: center; }
+  .tooltip-box {
+    position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: #1e293b; color: #f1f5f9; font-size: 12px; line-height: 1.5;
+    padding: 10px 14px; border-radius: 8px; width: 260px; z-index: 999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2); pointer-events: none;
+    opacity: 0; transition: opacity 0.15s; white-space: normal; text-align: left;
+    font-weight: 400;
+  }
+  .tooltip-box::after {
+    content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+    border: 6px solid transparent; border-top-color: #1e293b;
+  }
+  .tooltip-wrap:hover .tooltip-box,
+  .tooltip-wrap.open .tooltip-box { opacity: 1; }
 
   /* ── Loading ─────────────────────────────────────────────── */
   #loading {
@@ -513,6 +539,13 @@
   .safety-chip .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .chip-count { color: var(--text); }
   .chip-label { color: var(--muted); font-weight: 500; font-size: 12px; }
+
+  /* Safety tier explainer */
+  .tier-explainer { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; }
+  .tier-explainer-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 10px; }
+  .tier-rows { display: flex; gap: 12px; flex-wrap: wrap; }
+  .tier-row { display: flex; align-items: center; gap: 6px; }
+  .tier-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 
   /* Score profile */
   .profile-card {
@@ -703,7 +736,7 @@
     border-radius: var(--radius-sm);
     padding: 12px 14px;
   }
-  .dim-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px; }
+  .dim-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px; display: flex; align-items: center; }
   .dim-val { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
   .dim-bar { height: 3px; background: var(--surface2); border-radius: 2px; margin-top: 8px; overflow: hidden; }
   .dim-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
@@ -730,6 +763,9 @@
     color: var(--text-2);
   }
   .ot-tag span { color: var(--muted); }
+
+  /* CRISPOR badge */
+  .crispor-badge { background: var(--accent-soft); border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 8px; }
 
   /* Results table */
   .table-wrap {
@@ -797,6 +833,10 @@
     header { padding: 0 16px; }
     .upload-card { padding: 20px; }
     .guide-seq { max-width: 120px; }
+    .compare-grid { grid-template-columns: 1fr; }
+    .hero-title { font-size: 24px; }
+    .steps-row { flex-direction: column; align-items: stretch; }
+    .step-arrow { transform: rotate(90deg); text-align: center; }
   }
 </style>
 </head>
@@ -823,10 +863,53 @@
 
   <!-- ── Upload Panel ────────────────────────────────────────── -->
   <div id="upload-panel">
-    <div class="upload-hero">
-      <div class="eyebrow">AI-Powered CRISPR Design</div>
-      <h2>Design guide RNAs with<br>multi-dimensional safety scoring</h2>
-      <p>Upload a FASTA sequence to identify, filter, and rank gRNA candidates using our v2 safety engine.</p>
+
+    <!-- Hero section -->
+    <div class="hero-section">
+      <div class="hero-badge">🧬 Powered by real genome-wide analysis</div>
+      <h1 class="hero-title">Design CRISPR guides that actually work</h1>
+      <p class="hero-sub">SnipGen combines a trained ML model, real off-target genome search (Cas-OFFinder), and clinical consequence scoring — in one tool. No PhD required.</p>
+
+      <div class="compare-grid">
+        <div class="compare-card compare-bad">
+          <div class="compare-label">Other tools</div>
+          <ul>
+            <li>❌ Rule-based scoring only</li>
+            <li>❌ No real off-target search</li>
+            <li>❌ Must upload FASTA manually</li>
+            <li>❌ No explanation of results</li>
+          </ul>
+        </div>
+        <div class="compare-card compare-good">
+          <div class="compare-label">SnipGen</div>
+          <ul>
+            <li>✅ Trained ML on-target model</li>
+            <li>✅ Real genome search via Cas-OFFinder</li>
+            <li>✅ Type gene name, auto-fetch from NCBI</li>
+            <li>✅ AI explains every guide in plain English</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="steps-row">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <div class="step-title">Enter your gene</div>
+          <div class="step-desc">Type a gene name like TP53 or upload your own FASTA sequence</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <div class="step-title">Configure &amp; design</div>
+          <div class="step-desc">Choose your Cas enzyme and safety settings, then run the pipeline</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <div class="step-title">Get ranked results</div>
+          <div class="step-desc">Receive scored, explained guide RNAs ranked by multi-dimensional safety</div>
+        </div>
+      </div>
     </div>
 
     <div class="upload-card">
@@ -841,11 +924,23 @@
       <div class="gene-panel" id="gene-panel">
         <div class="gene-row">
           <div class="gene-field">
-            <label>Gene Symbol</label>
+            <label>
+              <span class="tooltip-wrap">
+                Gene Symbol
+                <span class="info-btn">ⓘ</span>
+                <span class="tooltip-box">The official HGNC symbol for your target gene (e.g. TP53, BRCA1). SnipGen automatically fetches the reference mRNA sequence from NCBI.</span>
+              </span>
+            </label>
             <input type="text" id="gene-input" placeholder="e.g. TP53, BRCA1, KRAS" autocomplete="off" spellcheck="false">
           </div>
           <div class="gene-field" style="max-width:150px">
-            <label>Organism</label>
+            <label>
+              <span class="tooltip-wrap">
+                Organism
+                <span class="info-btn">ⓘ</span>
+                <span class="tooltip-box">The species you're working with. This determines which genome is used for off-target search and which RefSeq database is queried.</span>
+              </span>
+            </label>
             <select id="organism-select">
               <option value="human">Human</option>
               <option value="mouse">Mouse</option>
@@ -882,16 +977,37 @@
         </div>
       </div>
 
-      <div class="presets-label">Strictness Preset</div>
+      <div class="presets-label">
+        <span class="tooltip-wrap">
+          Strictness Preset
+          <span class="info-btn">ⓘ</span>
+          <span class="tooltip-box">Quick settings for common use cases. Research: balanced scoring. Therapeutic: maximum safety filtering for clinical applications. Screening: prioritise on-target efficiency for genome-wide screens.</span>
+        </span>
+      </div>
       <div class="presets-row">
-        <button class="preset-btn" data-preset="research">Research — Balanced</button>
-        <button class="preset-btn active" data-preset="therapeutic">Therapeutic — Max Safety</button>
-        <button class="preset-btn" data-preset="screening">Screening — Max On-Target</button>
+        <div class="tooltip-wrap">
+          <button class="preset-btn" data-preset="research">Research — Balanced</button>
+          <span class="tooltip-box">Balanced on-target efficiency and off-target safety. Suitable for most research experiments.</span>
+        </div>
+        <div class="tooltip-wrap">
+          <button class="preset-btn active" data-preset="therapeutic">Therapeutic — Max Safety</button>
+          <span class="tooltip-box">Maximum safety filtering for clinical or translational applications. Stricter off-target thresholds.</span>
+        </div>
+        <div class="tooltip-wrap">
+          <button class="preset-btn" data-preset="screening">Screening — Max On-Target</button>
+          <span class="tooltip-box">Prioritises on-target efficiency for genome-wide screens or arrayed library design.</span>
+        </div>
       </div>
 
       <div class="controls-grid">
         <div class="control-group">
-          <label>Cas Variant</label>
+          <label>
+            <span class="tooltip-wrap">
+              Cas Variant
+              <span class="info-btn">ⓘ</span>
+              <span class="tooltip-box">The CRISPR enzyme you'll use in your experiment. Each has a different PAM sequence requirement. SpCas9 (NGG) is the most common choice for human cell editing.</span>
+            </span>
+          </label>
           <select id="cas-variant">
             <option value="SpCas9">SpCas9 (NGG)</option>
             <option value="SaCas9">SaCas9 (NNGRRT)</option>
@@ -901,19 +1017,43 @@
           </select>
         </div>
         <div class="control-group">
-          <label>Guide Length</label>
+          <label>
+            <span class="tooltip-wrap">
+              Guide Length
+              <span class="info-btn">ⓘ</span>
+              <span class="tooltip-box">Length of the spacer sequence in nucleotides. 20nt is standard for SpCas9. Shorter guides (17-18nt) can improve specificity at the cost of efficiency.</span>
+            </span>
+          </label>
           <input type="number" id="guide-length" value="20" min="17" max="25">
         </div>
         <div class="control-group">
-          <label>Min GC %</label>
+          <label>
+            <span class="tooltip-wrap">
+              Min GC %
+              <span class="info-btn">ⓘ</span>
+              <span class="tooltip-box">Minimum GC content threshold. Guides below this are filtered out — low GC content weakens the guide-DNA duplex, reducing cutting efficiency.</span>
+            </span>
+          </label>
           <input type="number" id="min-gc" value="40" min="0" max="100" step="5">
         </div>
         <div class="control-group">
-          <label>Max GC %</label>
+          <label>
+            <span class="tooltip-wrap">
+              Max GC %
+              <span class="info-btn">ⓘ</span>
+              <span class="tooltip-box">Maximum GC content threshold. Guides above this are filtered out — very high GC can cause secondary structures that reduce efficiency.</span>
+            </span>
+          </label>
           <input type="number" id="max-gc" value="70" min="0" max="100" step="5">
         </div>
         <div class="control-group">
-          <label>Top N Guides</label>
+          <label>
+            <span class="tooltip-wrap">
+              Top N Guides
+              <span class="info-btn">ⓘ</span>
+              <span class="tooltip-box">How many of the best-scoring guides to return. For most experiments, 10-20 is sufficient. Increase to 50+ for library design.</span>
+            </span>
+          </label>
           <input type="number" id="top-n" value="20" min="1" max="200">
         </div>
       </div>
@@ -951,6 +1091,17 @@
 
     <!-- Safety distribution -->
     <div class="safety-row" id="safety-row"></div>
+
+    <!-- Safety tier explainer -->
+    <div class="tier-explainer">
+      <div class="tier-explainer-title">Safety Tier Guide</div>
+      <div class="tier-rows">
+        <div class="tier-row"><div class="tier-dot" style="background:var(--green)"></div><span style="font-size:13px;color:var(--text-2)"><strong>SAFE (80-100)</strong>: High efficiency, minimal off-target risk</span></div>
+        <div class="tier-row"><div class="tier-dot" style="background:var(--yellow)"></div><span style="font-size:13px;color:var(--text-2)"><strong>MEDIUM (60-79)</strong>: Acceptable for most research applications</span></div>
+        <div class="tier-row"><div class="tier-dot" style="background:var(--orange)"></div><span style="font-size:13px;color:var(--text-2)"><strong>HIGH RISK (40-59)</strong>: Use with caution, validate experimentally</span></div>
+        <div class="tier-row"><div class="tier-dot" style="background:var(--red)"></div><span style="font-size:13px;color:var(--text-2)"><strong>AVOID (0-39)</strong>: High off-target risk or low efficiency</span></div>
+      </div>
+    </div>
 
     <!-- Score Profile radar -->
     <div class="profile-card" id="profile-card">
@@ -1003,6 +1154,31 @@
 </div>
 
 <script>
+// ── Tooltip click-toggle for mobile ────────────────────────────
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.info-btn');
+  if (btn) {
+    e.stopPropagation();
+    const wrap = btn.closest('.tooltip-wrap');
+    const isOpen = wrap.classList.contains('open');
+    // close all others
+    document.querySelectorAll('.tooltip-wrap.open').forEach(w => w.classList.remove('open'));
+    if (!isOpen) wrap.classList.add('open');
+    return;
+  }
+  // click outside — close all
+  document.querySelectorAll('.tooltip-wrap.open').forEach(w => w.classList.remove('open'));
+});
+
+// ── Helper: infoLabel ──────────────────────────────────────────
+function infoLabel(text, tip) {
+  return `<span class="tooltip-wrap">
+    ${text}
+    <span class="info-btn" title="">ⓘ</span>
+    <span class="tooltip-box">${tip}</span>
+  </span>`;
+}
+
 // ── State ──────────────────────────────────────────────────────
 let uploadedFile  = null;
 let fetchedFasta  = null;   // FASTA text returned by /fetch-gene
@@ -1407,11 +1583,16 @@ function renderGuideCard(c, i) {
   const sc = scoreColor(c.final_score);
 
   const dims = [
-    { label: 'On-Target',    val: c.on_target_score,    color: 'var(--accent)' },
-    { label: 'Off-Target',   val: c.off_target_score,   color: 'var(--green)'  },
-    { label: 'Consequence',  val: c.consequence_score,  color: 'var(--yellow)' },
-    { label: 'Confidence',   val: c.confidence_score,   color: 'var(--orange)' },
+    { label: 'On-Target',   val: c.on_target_score,   color: 'var(--accent)',  tip: 'Probability this guide cuts its intended target efficiently. Scored by a trained ML model using Doench 2016 position-specific nucleotide weights.' },
+    { label: 'Off-Target',  val: c.off_target_score,  color: 'var(--green)',   tip: 'Risk of the guide cutting unintended sites elsewhere in the genome. Powered by real genome-wide alignment via Cas-OFFinder / CRISPOR.' },
+    { label: 'Consequence', val: c.consequence_score, color: 'var(--yellow)',  tip: 'How biologically dangerous an off-target cut would be, based on whether the site is in a coding exon, promoter, or intergenic region.' },
+    { label: 'Confidence',  val: c.confidence_score,  color: 'var(--orange)',  tip: 'How confident the scoring model is given this guide\'s sequence features. Low confidence guides should be experimentally validated.' },
   ];
+
+  const crisprBadge = c.crispor_mit_score != null ? `
+    <div class="crispor-badge">
+      🔬 Real genome search · MIT: ${c.crispor_mit_score} · CFD: ${c.crispor_cfd_score} · ${c.crispor_ot_count} off-target sites
+    </div>` : '';
 
   return `<div class="guide-card">
     <div class="guide-card-header">
@@ -1436,7 +1617,7 @@ function renderGuideCard(c, i) {
       <div class="dims-grid">
         ${dims.map(d => `
         <div class="dim-card">
-          <div class="dim-label">${d.label}</div>
+          <div class="dim-label">${infoLabel(d.label, d.tip)}</div>
           <div class="dim-val" style="color:${d.color}">${d.val}</div>
           <div class="dim-bar"><div class="dim-bar-fill" style="width:${d.val}%;background:${d.color}"></div></div>
         </div>`).join('')}
@@ -1448,6 +1629,7 @@ function renderGuideCard(c, i) {
         <div class="ot-tag"><span>3 mm: </span><strong>${c.off_targets_3mm}</strong></div>
         <div class="ot-tag"><span>Data tier: </span><strong>${bd.consequence_tier || 'tier1'}</strong></div>
       </div>
+      ${crisprBadge}
     </div>
   </div>`;
 }
@@ -1482,7 +1664,7 @@ function renderRadar(c) {
   });
   // Data polygon
   const pts = dims.map((d, i) => polar(i, R * d.val).join(',')).join(' ');
-  svg += `<polygon points="${pts}" fill="rgba(37,99,235,0.12)" stroke="#2563eb" stroke-width="2"/>`;
+  svg += `<polygon points="${pts}" fill="rgba(29,78,216,0.12)" stroke="#1d4ed8" stroke-width="2"/>`;
   dims.forEach((d, i) => {
     const [x, y] = polar(i, R * d.val);
     svg += `<circle cx="${x}" cy="${y}" r="4" fill="${d.color}" stroke="white" stroke-width="1.5"/>`;
