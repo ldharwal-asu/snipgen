@@ -5,13 +5,16 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Query
+from fastapi import FastAPI, File, UploadFile, HTTPException, Query, Body
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from snipgen.analysis.base_editor import analyze_base_editing
+from snipgen.analysis.cloning_primers import design_cloning_oligos, design_all_vectors
 from snipgen.analysis.isoform_analyzer import analyze_guide_isoforms
 from snipgen.filters.gnomad_filter import check_guide_gnomad
 from snipgen.filters.pam_filter import PAM_REGISTRY
 from snipgen.pipeline import PipelineConfig, SnipGenPipeline
+from snipgen.scoring.clinvar_annotator import annotate_gene as clinvar_annotate_gene
 from webapp.crispor_client import (
     submit_sequence as crispor_submit,
     fetch_scores as crispor_fetch,
@@ -113,19 +116,44 @@ def _run_pipeline(fasta_bytes: bytes, cas_variant: str, guide_length: int,
             pipeline.run()
             output = json.loads((Path(out_dir) / "candidates.json").read_text())
 
-        # ── gnomAD + isoform annotation (gene-search mode only) ──────────────
         gene = (gene_symbol or "").strip().upper()
+        candidates = output.get("candidates", [])
+
+        # ── Base editing analysis (always run — pure sequence analysis) ───────
+        for c in candidates:
+            seq    = c.get("sequence", "")
+            strand = c.get("strand", "+")
+            try:
+                c["base_edit"] = analyze_base_editing(seq, strand)
+            except Exception:
+                pass
+
+        # ── Cloning primers (always run — pure sequence, no network) ──────────
+        for c in candidates:
+            seq = c.get("sequence", "")
+            try:
+                c["cloning"] = design_all_vectors(seq)
+            except Exception:
+                pass
+
+        # ── ClinVar gene annotation (gene-search mode) ────────────────────────
+        if gene:
+            try:
+                c_ann = clinvar_annotate_gene(gene)
+                output["clinvar_gene"] = c_ann
+            except Exception:
+                output["clinvar_gene"] = {}
+
+        # ── gnomAD + isoform annotation (gene-search mode, human only) ────────
         if gene and organism.lower() == "human":
-            candidates = output.get("candidates", [])
             for c in candidates:
-                seq   = c.get("sequence", "")
-                start = c.get("start", 0)
-                end   = c.get("end", start + len(seq))
+                seq    = c.get("sequence", "")
+                start  = c.get("start", 0)
+                end    = c.get("end", start + len(seq))
                 strand = c.get("strand", "+")
 
-                # gnomAD population SNP check
                 try:
-                    gnomad = check_guide_gnomad(
+                    c["gnomad"] = check_guide_gnomad(
                         guide_seq=seq,
                         gene_symbol=gene,
                         guide_start_in_mrna=start,
@@ -133,25 +161,22 @@ def _run_pipeline(fasta_bytes: bytes, cas_variant: str, guide_length: int,
                         strand=strand,
                         organism=organism,
                     )
-                    c["gnomad"] = gnomad
                 except Exception:
                     c["gnomad"] = {"gnomad_checked": False, "flag": "gnomAD check failed"}
 
-            # Isoform analysis — one NCBI call per transcript (shared cache),
-            # one string search per guide. Cap at top 8 guides to stay fast.
+            # Isoform — cap at top 8 guides (transcript FASTA cached after first)
             for c in candidates[:8]:
                 seq = c.get("sequence", "")
                 try:
-                    iso = analyze_guide_isoforms(
+                    c["isoform"] = analyze_guide_isoforms(
                         guide_seq=seq,
                         gene_symbol=gene,
                         organism=organism,
                     )
-                    c["isoform"] = iso
                 except Exception:
                     c["isoform"] = {"isoform_checked": False, "flag": "Isoform check failed"}
 
-        # Submit to CRISPOR (fire-and-forget — polling happens via /crispor-scores)
+        # ── CRISPOR submission (fire-and-forget) ──────────────────────────────
         try:
             crispor_batch_id = crispor_submit(fasta_text, organism, cas_variant)
         except Exception:
@@ -159,10 +184,49 @@ def _run_pipeline(fasta_bytes: bytes, cas_variant: str, guide_length: int,
 
         output["crispor_batch_id"] = crispor_batch_id
         output["crispor_genome"]   = organism
+        output["gene_symbol"]      = gene
         return output
 
     finally:
         tmp_path.unlink(missing_ok=True)
+
+
+def _run_batch_pipeline(
+    gene_list: list[str],
+    organism: str,
+    cas_variant: str,
+    top_n: int,
+) -> dict:
+    """
+    Batch design: fetch sequences for each gene and run pipeline.
+    Returns combined results with per-gene candidate lists.
+    """
+    results: dict[str, dict] = {}
+
+    for gene in gene_list[:10]:   # hard cap at 10 genes per batch
+        gene = gene.strip().upper()
+        if not gene:
+            continue
+        try:
+            fasta_text, accession = _fetch_sequence_entrez(gene, organism)
+            fasta_bytes = fasta_text.encode()
+            gene_result = _run_pipeline(
+                fasta_bytes=fasta_bytes,
+                cas_variant=cas_variant,
+                guide_length=20,
+                min_gc=0.40,
+                max_gc=0.70,
+                top_n=top_n,
+                organism=organism,
+                gene_symbol=gene,
+            )
+            gene_result["gene"] = gene
+            gene_result["accession"] = accession
+            results[gene] = gene_result
+        except Exception as exc:
+            results[gene] = {"gene": gene, "error": str(exc), "candidates": []}
+
+    return {"batch": True, "genes": list(results.keys()), "results": results}
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
@@ -213,7 +277,7 @@ async def design(
     max_gc: float = Query(0.70, ge=0.0, le=1.0),
     top_n: int = Query(20, ge=1, le=200),
     organism: str = Query("human"),
-    gene_symbol: str = Query("", description="Gene symbol for gnomAD/isoform annotation (optional)"),
+    gene_symbol: str = Query("", description="Gene symbol for gnomAD/isoform/ClinVar annotation"),
 ):
     """
     Accept a FASTA upload, queue the pipeline, return a job_id immediately.
@@ -228,7 +292,6 @@ async def design(
     if len(fasta_bytes) == 0:
         raise HTTPException(400, "Empty file uploaded")
 
-    # Validate it looks like FASTA before queuing
     text_preview = fasta_bytes[:200].decode("utf-8", errors="replace")
     if not any(c in text_preview for c in (">", "A", "C", "G", "T", "a", "c", "g", "t")):
         raise HTTPException(400, "File does not appear to be a valid FASTA")
@@ -241,17 +304,46 @@ async def design(
     return JSONResponse({"job_id": job_id, "status": "queued"}, status_code=202)
 
 
+@app.post("/batch-design")
+async def batch_design(
+    genes: str = Query(..., description="Comma-separated gene symbols (max 10)"),
+    organism: str = Query("human"),
+    cas_variant: str = Query("SpCas9"),
+    top_n: int = Query(5, ge=1, le=20),
+):
+    """
+    Batch design mode: design guides for multiple genes at once.
+    Accepts comma-separated gene symbols, returns job_id.
+    """
+    gene_list = [g.strip() for g in genes.split(",") if g.strip()][:10]
+    if not gene_list:
+        raise HTTPException(400, "No valid gene symbols provided")
+    if cas_variant not in PAM_REGISTRY:
+        raise HTTPException(400, f"Unknown Cas variant '{cas_variant}'")
+
+    job_id = queue.submit(
+        _run_batch_pipeline,
+        gene_list, organism, cas_variant, top_n,
+    )
+
+    return JSONResponse({
+        "job_id": job_id,
+        "status": "queued",
+        "genes": gene_list,
+        "mode": "batch",
+    }, status_code=202)
+
+
 @app.get("/job/{job_id}")
 async def job_status(job_id: str):
     """
     Poll for pipeline job status.
 
     Response shapes:
-      {"status": "queued",  "progress": "Queued…",       "elapsed_s": 0.1}
-      {"status": "running", "progress": "Scoring…",      "elapsed_s": 3.4}
-      {"status": "done",    "progress": "Done",           "elapsed_s": 8.1,
-       "result": { ...full pipeline JSON... }}
-      {"status": "failed",  "error": "...", "elapsed_s": 2.0}
+      {"status": "queued",  "progress": "Queued…",  "elapsed_s": 0.1}
+      {"status": "running", "progress": "Scoring…", "elapsed_s": 3.4}
+      {"status": "done",    "result": {...},         "elapsed_s": 8.1}
+      {"status": "failed",  "error": "...",          "elapsed_s": 2.0}
     """
     job = queue.get(job_id)
     if not job:
@@ -260,15 +352,68 @@ async def job_status(job_id: str):
 
 
 @app.get("/crispor-scores")
-async def crispor_scores(batch_id: str = Query(...)):
-    """Poll CRISPOR for real off-target results."""
+async def crispor_scores(
+    batch_id: str = Query(...),
+    gene_symbol: str = Query("", description="Gene symbol for ClinVar off-target annotation"),
+):
+    """Poll CRISPOR for real off-target results, annotated with ClinVar data."""
     if not batch_id or not batch_id.replace("-", "").replace("_", "").isalnum() or len(batch_id) > 30:
         raise HTTPException(400, "Invalid batch_id")
+
     scores = crispor_fetch(batch_id)
     if scores is None:
         return JSONResponse({"status": "pending"})
-    converted = {
-        seq: {**data, "snipgen_offtarget_score": crispor_to_offtarget_score(data)}
-        for seq, data in scores.items()
-    }
+
+    converted = {}
+    for seq, data in scores.items():
+        entry = {**data, "snipgen_offtarget_score": crispor_to_offtarget_score(data)}
+
+        # ClinVar annotation: annotate the gene locus of off-target hits
+        locus = data.get("gene_locus", "")
+        if locus and locus != "—":
+            # locus format: "exon:GENENAME" or "intron:GENENAME"
+            parts = locus.split(":")
+            gene_name = parts[-1].strip() if len(parts) >= 2 else ""
+            if gene_name:
+                try:
+                    gene_ann = clinvar_annotate_gene(gene_name)
+                    entry["clinvar_offtarget"] = {
+                        "gene":   gene_name,
+                        "tier":   gene_ann.get("tier", "MINIMAL"),
+                        "variants": gene_ann.get("variants", 0),
+                        "disease": gene_ann.get("disease", ""),
+                        "color":  gene_ann.get("color", "#9ca3af"),
+                        "label":  gene_ann.get("label", ""),
+                    }
+                except Exception:
+                    pass
+
+        converted[seq] = entry
+
     return JSONResponse({"status": "ready", "scores": converted})
+
+
+@app.get("/cloning-primers")
+async def cloning_primers(
+    guide: str = Query(..., description="20-mer guide sequence (no PAM)"),
+    vector: str = Query("pX330"),
+):
+    """Generate cloning oligos for a single guide + vector combination."""
+    guide = guide.strip().upper()
+    if len(guide) < 17 or len(guide) > 25:
+        raise HTTPException(400, "Guide must be 17-25 nt")
+    if any(n not in "ACGTN" for n in guide):
+        raise HTTPException(400, "Guide must contain only ACGTN")
+    return JSONResponse(design_cloning_oligos(guide, vector))
+
+
+@app.get("/base-edit")
+async def base_edit(
+    guide: str = Query(..., description="20-mer guide sequence (no PAM)"),
+    strand: str = Query("+"),
+):
+    """Analyze a guide for base editing suitability (CBE/ABE)."""
+    guide = guide.strip().upper()
+    if len(guide) < 17:
+        raise HTTPException(400, "Guide must be ≥17 nt")
+    return JSONResponse(analyze_base_editing(guide, strand))

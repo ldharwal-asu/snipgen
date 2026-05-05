@@ -765,11 +765,76 @@
   .ot-tag span { color: var(--muted); }
 
   /* CRISPOR badge */
-  .crispor-badge { background: var(--accent-soft); border: 1px solid #bfdbfe; border-radius: 6px; padding: 6px 10px; font-size: 12px; color: var(--accent); font-weight: 600; margin-top: 8px; }
+  .crispor-badge { background: var(--accent-soft); border: 1px solid #bfdbfe; border-radius: 6px; padding: 7px 12px; font-size: 12px; color: var(--accent); font-weight: 500; margin-top: 8px; line-height: 1.6; }
+  .crispor-badge-pending { background: var(--surface2); border: 1px dashed var(--border); border-radius: 6px; padding: 6px 12px; font-size: 12px; color: var(--muted); margin-top: 8px; }
   .gnomad-badge { border: 1.5px solid; border-radius: 6px; padding: 6px 10px; font-size: 12px; margin-top: 6px; }
   .gnomad-ok   { border-color: var(--green); color: var(--green); background: #f0fdf4; }
   .gnomad-warn { background: #fffbeb; color: #92400e; }
   .isoform-badge { border: 1.5px solid; border-radius: 6px; padding: 6px 10px; font-size: 12px; margin-top: 6px; background: #f8faff; }
+
+  /* Cloning primers */
+  .primers-box { background: #f8faff; border: 1.5px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; margin-top: 10px; }
+  .primers-title { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .primer-warn { background: #fff7ed; border: 1px solid #fed7aa; color: #92400e; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0; }
+  .primer-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .primer-label { font-size: 11px; color: var(--muted); min-width: 110px; font-weight: 600; }
+  .primer-seq { font-family: var(--mono); font-size: 12px; color: var(--text); flex: 1; letter-spacing: 0.5px; word-break: break-all; }
+  .primer-copy { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-size: 11px; cursor: pointer; color: var(--muted); transition: all 0.15s; flex-shrink: 0; }
+  .primer-copy:hover { border-color: var(--accent); color: var(--accent); }
+  .primer-meta { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* Base editing */
+  .be-box { background: #fdf4ff; border: 1.5px solid #e9d5ff; border-radius: 8px; padding: 12px 14px; margin-top: 10px; }
+  .be-guide { font-family: var(--mono); font-size: 14px; letter-spacing: 2px; margin: 8px 0; }
+  .be-pam { color: var(--muted); font-size: 12px; letter-spacing: 1px; }
+  .nt-normal { color: var(--text-2); }
+  .nt-window { background: #fde68a; color: #92400e; border-radius: 2px; padding: 0 1px; }
+  .nt-cbe    { background: #fca5a5; color: #7f1d1d; border-radius: 2px; padding: 0 1px; font-weight: 700; }
+  .nt-abe    { background: #93c5fd; color: #1e3a8a; border-radius: 2px; padding: 0 1px; font-weight: 700; }
+  .nt-seed   { color: var(--muted); font-size: 12px; }
+  .be-legend { display: flex; gap: 12px; font-size: 11px; color: var(--muted); margin: 6px 0; flex-wrap: wrap; }
+  .be-leg { display: flex; align-items: center; gap: 3px; }
+  .be-flags { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  .be-flag { font-size: 12px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+  .be-ok { background: var(--green-soft); color: var(--green); }
+  .be-no { background: var(--surface2); color: var(--muted); }
+
+  /* Comparison checkbox */
+  .comp-check-label { font-size: 12px; color: var(--muted); cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none; }
+  .comp-check-label input { accent-color: var(--accent); }
+
+  /* Comparison bar */
+  .compare-bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; border-radius: 40px; padding: 10px 20px 10px 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.25); z-index: 200; font-size: 13px; font-weight: 600; animation: slideUp 0.2s ease; }
+  @keyframes slideUp { from { opacity:0; transform: translateX(-50%) translateY(20px); } to { opacity:1; transform: translateX(-50%) translateY(0); } }
+  .compare-bar-count { opacity: 0.8; }
+  .compare-bar-btn { background: var(--accent-mid); color: #fff; border: none; border-radius: 20px; padding: 6px 16px; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+  .compare-bar-btn:hover { background: var(--accent); }
+  .compare-bar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .compare-bar-clear { opacity: 0.6; cursor: pointer; font-size: 18px; line-height: 1; background: none; border: none; color: #fff; }
+
+  /* Compare modal */
+  .compare-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: center; justify-content: center; padding: 20px; }
+  .compare-modal { background: var(--surface); border-radius: 14px; padding: 28px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .comp-grid { display: grid; gap: 16px; }
+  .comp-col { background: var(--bg); border: 1.5px solid var(--border); border-radius: 10px; padding: 16px; }
+  .comp-col-head { border-bottom: 2px solid; padding-bottom: 12px; margin-bottom: 12px; }
+  .comp-gid { font-size: 13px; font-weight: 800; font-family: var(--mono); }
+  .comp-seq { font-family: var(--mono); font-size: 11px; color: var(--muted); word-break: break-all; margin: 4px 0; }
+  .comp-row { display: flex; flex-direction: column; gap: 3px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .comp-row:last-child { border-bottom: none; }
+  .comp-best { background: var(--green-soft); border-radius: 6px; padding: 6px 8px; }
+  .comp-dim-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; }
+  .comp-dim-val { font-size: 18px; font-weight: 700; color: var(--text); }
+
+  /* Batch mode */
+  .batch-genes-area { width: 100%; min-height: 80px; border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px; font-family: var(--sans); resize: vertical; background: var(--surface2); color: var(--text); }
+  .batch-genes-area:focus { outline: none; border-color: var(--accent); background: var(--bg); }
+  .batch-results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 20px; }
+  .batch-gene-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .batch-gene-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .batch-gene-error { color: var(--red); font-size: 12px; }
+  .batch-guide-mini { font-family: var(--mono); font-size: 11px; color: var(--accent); padding: 3px 8px; background: var(--accent-soft); border-radius: 4px; display: inline-block; margin: 2px; cursor: pointer; }
+  .batch-guide-mini:hover { background: var(--accent); color: #fff; }
 
   /* Results table */
   .table-wrap {
@@ -876,21 +941,25 @@
 
       <div class="compare-grid">
         <div class="compare-card compare-bad">
-          <div class="compare-label">Other tools</div>
+          <div class="compare-label">Benchling / CRISPOR / IDT</div>
           <ul>
             <li>❌ Rule-based scoring only</li>
-            <li>❌ No real off-target search</li>
-            <li>❌ Must upload FASTA manually</li>
-            <li>❌ No explanation of results</li>
+            <li>❌ No population variant filter</li>
+            <li>❌ No isoform specificity check</li>
+            <li>❌ Manual FASTA upload required</li>
+            <li>❌ No cloning oligos generated</li>
+            <li>❌ No base editing window analysis</li>
           </ul>
         </div>
         <div class="compare-card compare-good">
-          <div class="compare-label">SnipGen</div>
+          <div class="compare-label">SnipGen — what you get</div>
           <ul>
-            <li>✅ Trained ML on-target model</li>
-            <li>✅ Real genome search via Cas-OFFinder</li>
-            <li>✅ Type gene name, auto-fetch from NCBI</li>
-            <li>✅ AI explains every guide in plain English</li>
+            <li>✅ ML model trained on 5,310 real Azimuth guides</li>
+            <li>✅ gnomAD v4 population SNP filter</li>
+            <li>✅ Isoform specificity across all RefSeq transcripts</li>
+            <li>✅ Auto-fetch any gene from NCBI by name</li>
+            <li>✅ Cloning oligos ready to order (BbsI/BsmBI)</li>
+            <li>✅ CBE/ABE base editing window visualized per guide</li>
           </ul>
         </div>
       </div>
@@ -899,19 +968,25 @@
         <div class="step-card">
           <div class="step-num">1</div>
           <div class="step-title">Enter your gene</div>
-          <div class="step-desc">Type a gene name like TP53 or upload your own FASTA sequence</div>
+          <div class="step-desc">Type TP53, BRCA1, or any gene name — auto-fetched from NCBI</div>
         </div>
         <div class="step-arrow">→</div>
         <div class="step-card">
           <div class="step-num">2</div>
-          <div class="step-title">Configure &amp; design</div>
-          <div class="step-desc">Choose your Cas enzyme and safety settings, then run the pipeline</div>
+          <div class="step-title">AI designs guides</div>
+          <div class="step-desc">ML scoring + real genome search + gnomAD + isoform checks</div>
         </div>
         <div class="step-arrow">→</div>
         <div class="step-card">
           <div class="step-num">3</div>
-          <div class="step-title">Get ranked results</div>
-          <div class="step-desc">Receive scored, explained guide RNAs ranked by multi-dimensional safety</div>
+          <div class="step-title">Review results</div>
+          <div class="step-desc">Compare guides side-by-side, see base editing windows</div>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step-card">
+          <div class="step-num">4</div>
+          <div class="step-title">Order oligos</div>
+          <div class="step-desc">One-click cloning oligos ready for BbsI/BsmBI ligation</div>
         </div>
       </div>
     </div>
@@ -922,6 +997,7 @@
       <div class="input-tabs">
         <button class="input-tab active" id="tab-gene" onclick="switchTab('gene')">🔍 Search by Gene</button>
         <button class="input-tab" id="tab-file" onclick="switchTab('file')">📂 Upload FASTA</button>
+        <button class="input-tab" id="tab-batch" onclick="switchTab('batch')">📋 Batch Design</button>
       </div>
 
       <!-- Gene search panel -->
@@ -968,6 +1044,37 @@
           <span class="gene-chip" onclick="quickGene('PCSK9')">PCSK9</span>
           <span class="gene-chip" onclick="quickGene('DMD')">DMD</span>
         </div>
+      </div>
+
+      <!-- Batch mode panel -->
+      <div id="batch-panel" style="display:none">
+        <div class="gene-field" style="margin-bottom:10px">
+          <label>
+            <span class="tooltip-wrap">Gene Symbols (one per line or comma-separated, max 10)
+              <span class="info-btn">ⓘ</span>
+              <span class="tooltip-box">Enter multiple gene names to design guides for all of them at once. SnipGen will fetch each sequence from NCBI and run the full pipeline, returning a ranked guide list per gene.</span>
+            </span>
+          </label>
+          <textarea class="batch-genes-area" id="batch-genes-input" placeholder="TP53&#10;BRCA1&#10;KRAS&#10;EGFR"></textarea>
+        </div>
+        <div class="gene-field" style="max-width:220px;margin-bottom:16px">
+          <label>Organism</label>
+          <select id="batch-organism-select">
+            <option value="human">Human</option>
+            <option value="mouse">Mouse</option>
+          </select>
+        </div>
+        <div class="gene-field" style="max-width:160px;margin-bottom:16px">
+          <label>
+            <span class="tooltip-wrap">Guides per Gene
+              <span class="info-btn">ⓘ</span>
+              <span class="tooltip-box">Number of top-ranked guides to return for each gene. Lower values run faster.</span>
+            </span>
+          </label>
+          <input type="number" id="batch-top-n" value="5" min="1" max="20">
+        </div>
+        <button class="btn" id="batch-run-btn" onclick="runBatch()" style="width:100%">Run Batch Design</button>
+        <div id="batch-results" class="batch-results-grid" style="display:none"></div>
       </div>
 
       <!-- File upload panel -->
@@ -1066,6 +1173,25 @@
     </div>
   </div>
 
+  <!-- ── Compare bar (fixed bottom) ───────────────────────── -->
+  <div class="compare-bar" id="compare-bar" style="display:none">
+    <span>📊</span>
+    <span class="compare-bar-count">0 guides selected</span>
+    <button class="compare-bar-btn" id="compare-bar-btn" onclick="openCompareModal()" disabled>Compare →</button>
+    <button class="compare-bar-clear" onclick="clearCompare()" title="Clear">✕</button>
+  </div>
+
+  <!-- ── Compare modal ─────────────────────────────────────── -->
+  <div class="compare-modal-overlay" id="compare-modal" onclick="if(event.target===this)closeCompareModal()">
+    <div class="compare-modal">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div style="font-size:16px;font-weight:700;color:var(--text)">Guide Comparison</div>
+        <button class="btn-ghost btn-sm" onclick="closeCompareModal()">Close</button>
+      </div>
+      <div id="compare-modal-body"></div>
+    </div>
+  </div>
+
   <!-- ── Loading ────────────────────────────────────────────── -->
   <div id="loading">
     <div class="loading-ring"></div>
@@ -1083,6 +1209,9 @@
       </div>
       <button class="btn-ghost" id="new-analysis-btn">← New Analysis</button>
     </div>
+
+    <!-- ClinVar gene banner -->
+    <div id="clinvar-banner" style="display:none;border-radius:8px;padding:10px 16px;margin-bottom:12px;font-size:13px;font-weight:600;border:1.5px solid"></div>
 
     <!-- CRISPOR live update banner -->
     <div id="crispor-banner" style="display:none;align-items:center;gap:10px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:13px;color:var(--accent);font-weight:600;">
@@ -1192,18 +1321,101 @@ let lastResult    = null;
 // ── Tab switching ──────────────────────────────────────────────
 function switchTab(mode) {
   inputMode = mode;
-  document.getElementById('tab-gene').classList.toggle('active', mode === 'gene');
-  document.getElementById('tab-file').classList.toggle('active', mode === 'file');
-  document.getElementById('gene-panel').style.display = mode === 'gene' ? '' : 'none';
-  document.getElementById('file-panel').style.display = mode === 'file' ? '' : 'none';
-  // re-evaluate run button
+  ['gene','file','batch'].forEach(m => {
+    document.getElementById('tab-'+m)?.classList.toggle('active', m === mode);
+    const panel = document.getElementById(m+'-panel');
+    if (panel) panel.style.display = m === mode ? '' : 'none';
+  });
+  // hide main run button in batch mode (batch has its own button)
+  const runBtn = document.getElementById('run-btn');
+  if (runBtn) runBtn.style.display = mode === 'batch' ? 'none' : '';
   updateRunBtn();
 }
 
 function updateRunBtn() {
   const ready = (inputMode === 'gene' && fetchedFasta) ||
                 (inputMode === 'file' && uploadedFile);
-  document.getElementById('run-btn').disabled = !ready;
+  const btn = document.getElementById('run-btn');
+  if (btn) btn.disabled = !ready;
+}
+
+function clearCompare() {
+  compareSet = {};
+  document.querySelectorAll('.comp-check').forEach(cb => cb.checked = false);
+  updateCompareBar();
+}
+
+// ── Batch mode ─────────────────────────────────────────────────
+async function runBatch() {
+  const raw = document.getElementById('batch-genes-input').value;
+  const genes = raw.split(/[\n,]+/).map(g => g.trim().toUpperCase()).filter(Boolean).slice(0, 10);
+  if (genes.length === 0) { alert('Enter at least one gene symbol.'); return; }
+  const organism = document.getElementById('batch-organism-select').value;
+  const topN = document.getElementById('batch-top-n').value;
+  const btn = document.getElementById('batch-run-btn');
+  const resultsEl = document.getElementById('batch-results');
+
+  btn.disabled = true;
+  btn.textContent = `Running for ${genes.length} gene(s)…`;
+  resultsEl.style.display = 'none';
+
+  try {
+    const r = await fetch(`/batch-design?genes=${encodeURIComponent(genes.join(','))}&organism=${organism}&top_n=${topN}`, { method: 'POST' });
+    const { job_id } = await r.json();
+    btn.textContent = 'Polling results…';
+
+    // Poll job
+    for (let attempt = 0; attempt < 120; attempt++) {
+      await new Promise(res => setTimeout(res, 2000));
+      const jr = await fetch(`/job/${job_id}`);
+      const job = await jr.json();
+      if (job.status === 'done') {
+        renderBatchResults(job.result);
+        break;
+      } else if (job.status === 'failed') {
+        alert('Batch job failed: ' + job.error);
+        break;
+      }
+      btn.textContent = `Running… ${Math.round(job.elapsed_s || 0)}s`;
+    }
+  } catch (e) {
+    alert('Batch error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Run Batch Design';
+  }
+}
+
+function renderBatchResults(data) {
+  const resultsEl = document.getElementById('batch-results');
+  if (!data || !data.results) { resultsEl.style.display = 'none'; return; }
+  resultsEl.style.display = 'grid';
+  resultsEl.innerHTML = Object.entries(data.results).map(([gene, res]) => {
+    if (res.error) return `<div class="batch-gene-card">
+      <div class="batch-gene-title">🧬 ${gene}</div>
+      <div class="batch-gene-error">Error: ${res.error}</div>
+    </div>`;
+    const cands = res.candidates || [];
+    const top = cands.slice(0, 5);
+    return `<div class="batch-gene-card">
+      <div class="batch-gene-title">🧬 ${gene} <span style="color:var(--muted);font-weight:400;font-size:12px">${res.accession || ''}</span></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${cands.length} guides designed</div>
+      ${top.map((c, i) => `<div style="margin-bottom:4px;display:flex;align-items:center;gap:6px">
+        <span style="font-size:11px;color:var(--muted)">#${i+1}</span>
+        <span class="batch-guide-mini" onclick="navigator.clipboard.writeText('${c.sequence}')" title="Click to copy">${c.sequence}</span>
+        <span class="safety-badge badge-${c.safety_color || 'yellow'}" style="font-size:10px">${c.final_score}</span>
+      </div>`).join('')}
+      <button class="btn-ghost btn-sm" style="margin-top:8px;width:100%" onclick="loadBatchGene('${gene}',${JSON.stringify(res).replace(/"/g,'&quot;')})">Full results →</button>
+    </div>`;
+  }).join('');
+}
+
+function loadBatchGene(gene, res) {
+  lastResult = res;
+  renderDashboard(lastResult);
+  switchTab('gene');
+  document.getElementById('upload-panel').style.display = 'none';
+  document.getElementById('dashboard').style.display = '';
 }
 
 // ── Gene lookup ────────────────────────────────────────────────
@@ -1424,7 +1636,8 @@ function startCrisprPolling(batchId) {
     }
 
     try {
-      const resp = await fetch(`/crispor-scores?batch_id=${encodeURIComponent(batchId)}`);
+      const gene = lastResult?.gene_symbol || '';
+      const resp = await fetch(`/crispor-scores?batch_id=${encodeURIComponent(batchId)}&gene_symbol=${encodeURIComponent(gene)}`);
       const data = await resp.json();
       if (data.status === 'ready') {
         clearInterval(_crisprPollTimer);
@@ -1477,6 +1690,23 @@ function applyCrisprScores(scores) {
 function renderDashboard(data) {
   const meta = data.metadata || {};
   const candidates = data.candidates || [];
+
+  // ClinVar gene banner
+  const cvBanner = document.getElementById('clinvar-banner');
+  if (cvBanner && data.clinvar_gene && data.clinvar_gene.tier) {
+    const cv = data.clinvar_gene;
+    const tierColors = { CRITICAL:'#dc2626', HIGH:'#ea580c', MODERATE:'#d97706', LOW:'#059669', MINIMAL:'#9ca3af' };
+    const bgColors   = { CRITICAL:'#fef2f2', HIGH:'#fff7ed', MODERATE:'#fffbeb', LOW:'#f0fdf4', MINIMAL:'#f9fafb' };
+    const col = tierColors[cv.tier] || '#9ca3af';
+    const bg  = bgColors[cv.tier]  || '#f9fafb';
+    cvBanner.style.display = 'block';
+    cvBanner.style.background = bg;
+    cvBanner.style.borderColor = col;
+    cvBanner.style.color = col;
+    cvBanner.innerHTML = `🏥 <strong>ClinVar — ${cv.tier}</strong>: ${data.gene_symbol || ''} has <strong>${(cv.variants || 0).toLocaleString()}</strong> pathogenic variants · ${cv.disease || ''} ${cv.label ? `· ${cv.label}` : ''}`;
+  } else if (cvBanner) {
+    cvBanner.style.display = 'none';
+  }
 
   // Seq info — show max 3 inline, rest in expandable
   const allStats = (meta.sequence_stats || []);
@@ -1583,6 +1813,173 @@ function scoreColor(val) {
   return 'var(--red)';
 }
 
+// ── Reverse complement (JS) ────────────────────────────────────
+function reverseComplement(seq) {
+  const comp = { A:'T', T:'A', C:'G', G:'C', N:'N' };
+  return seq.toUpperCase().split('').reverse().map(n => comp[n] || n).join('');
+}
+
+// ── Cloning primers badge ──────────────────────────────────────
+function cloningPrimersBadge(seq) {
+  if (!seq || seq.length < 17) return '';
+  const guide = seq.toUpperCase().slice(0, 20);
+  const rc    = reverseComplement(guide);
+  const addG  = guide[0] !== 'G';
+  const top   = 'CACC' + (addG ? 'G' : '') + guide;
+  const bot   = 'AAAC' + rc + (addG ? 'C' : '');
+  const tm    = (() => {
+    const gc = (guide.match(/[GC]/g) || []).length;
+    return (81.5 + 16.6 * 1.699 + 0.41 * (gc / 20 * 100) - 675 / 20).toFixed(1);
+  })();
+  return `<div class="primers-box">
+    <div class="primers-title">${infoLabel('✂️ Cloning Oligos', 'Ready-to-order oligos for ligation into pX330 / lentiCRISPRv2 via BbsI or BsmBI. Anneal at 95°C → ramp to 25°C, dilute 1:200 before ligation. Both oligos shown 5\'→3\'.')}
+      ${addG ? '<span class="primer-warn">G prepended for U6 promoter</span>' : ''}
+    </div>
+    <div class="primer-row">
+      <span class="primer-label">Top (sense)</span>
+      <span class="primer-seq">${top}</span>
+      <button class="primer-copy" onclick="navigator.clipboard.writeText('${top}');this.textContent='✓';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+    </div>
+    <div class="primer-row">
+      <span class="primer-label">Bottom (antisense)</span>
+      <span class="primer-seq">${bot}</span>
+      <button class="primer-copy" onclick="navigator.clipboard.writeText('${bot}');this.textContent='✓';setTimeout(()=>this.textContent='Copy',1500)">Copy</button>
+    </div>
+    <div class="primer-meta">Guide Tm ≈ ${tm}°C · BbsI/BsmBI compatible (pX330, pX458, lentiCRISPRv2)</div>
+  </div>`;
+}
+
+// ── Base editing window badge ──────────────────────────────────
+function baseEditWindowBadge(seq) {
+  if (!seq || seq.length < 17) return '';
+  const guide = seq.toUpperCase().slice(0, 20).padEnd(20, 'N');
+  const window = guide.slice(3, 8);  // positions 4-8 (0-indexed: 3-7)
+  const cbeTargets = [];
+  const abeTargets = [];
+  for (let i = 3; i < 8; i++) {
+    if (guide[i] === 'C') cbeTargets.push(i + 1);
+    if (guide[i] === 'A') abeTargets.push(i + 1);
+  }
+  const cbeOk = cbeTargets.length > 0;
+  const abeOk = abeTargets.length > 0;
+
+  // Annotated guide display
+  let annotated = '';
+  for (let i = 0; i < guide.length; i++) {
+    const inWin = i >= 3 && i < 8;
+    const isCBE = inWin && guide[i] === 'C';
+    const isABE = inWin && guide[i] === 'A';
+    let cls = 'nt-normal';
+    if (isCBE) cls = 'nt-cbe';
+    else if (isABE) cls = 'nt-abe';
+    else if (inWin) cls = 'nt-window';
+    else if (i >= 8) cls = 'nt-seed';
+    annotated += `<span class="${cls}" title="pos ${i+1}">${guide[i]}</span>`;
+  }
+
+  return `<div class="be-box">
+    <div class="primers-title">${infoLabel('🧬 Base Editing Window', 'Shows which bases fall in the SpCas9 edit window (positions 4-8 from PAM-distal end). CBE converts C→T; ABE converts A→G. Orange = window, red = CBE target C, blue = ABE target A, grey = seed region.')}</div>
+    <div class="be-guide">${annotated}<span class="be-pam"> NGG</span></div>
+    <div class="be-legend">
+      <span class="be-leg"><span class="nt-cbe">C</span> CBE target (C→T)</span>
+      <span class="be-leg"><span class="nt-abe">A</span> ABE target (A→G)</span>
+      <span class="be-leg"><span class="nt-window">N</span> Edit window</span>
+      <span class="be-leg"><span class="nt-seed">N</span> Seed region</span>
+    </div>
+    <div class="be-flags">
+      <span class="be-flag ${cbeOk ? 'be-ok' : 'be-no'}">CBE: ${cbeOk ? `✅ ${cbeTargets.length} target(s) at pos ${cbeTargets.join(', ')}` : '✗ No Cs in window'}</span>
+      <span class="be-flag ${abeOk ? 'be-ok' : 'be-no'}">ABE: ${abeOk ? `✅ ${abeTargets.length} target(s) at pos ${abeTargets.join(', ')}` : '✗ No As in window'}</span>
+    </div>
+  </div>`;
+}
+
+// ── ClinVar off-target badge (per guide) ───────────────────────
+function clinvarOTBadge(c) {
+  const bd = c.score_breakdown || {};
+  const clinvar = (bd.clinvar_offtarget) || (c.clinvar_offtarget);
+  if (!clinvar || !clinvar.tier) return '';
+  const colors = { CRITICAL:'#dc2626', HIGH:'#ea580c', MODERATE:'#d97706', LOW:'#059669', MINIMAL:'#6b7280' };
+  const col = colors[clinvar.tier] || '#6b7280';
+  return ` · <span style="color:${col};font-weight:700" title="${clinvar.disease || ''}">${clinvar.tier}: ${clinvar.gene}</span>`;
+}
+
+// ── Comparison state ───────────────────────────────────────────
+let compareSet = {};  // seq → candidate object
+
+function toggleCompare(checkbox, gid) {
+  const seq = checkbox.dataset.seq;
+  if (checkbox.checked) {
+    if (Object.keys(compareSet).length >= 4) {
+      checkbox.checked = false;
+      alert('Select up to 4 guides to compare.');
+      return;
+    }
+    const c = (lastResult?.candidates || []).find(x => x.sequence === seq);
+    if (c) compareSet[seq] = c;
+  } else {
+    delete compareSet[seq];
+  }
+  updateCompareBar();
+}
+
+function updateCompareBar() {
+  const n = Object.keys(compareSet).length;
+  const bar = document.getElementById('compare-bar');
+  if (!bar) return;
+  if (n === 0) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.querySelector('.compare-bar-count').textContent = `${n} guide${n > 1 ? 's' : ''} selected`;
+  bar.querySelector('#compare-bar-btn').disabled = n < 2;
+}
+
+function openCompareModal() {
+  const guides = Object.values(compareSet);
+  if (guides.length < 2) return;
+  const modal = document.getElementById('compare-modal');
+  const body  = document.getElementById('compare-modal-body');
+  const dims  = ['on_target_score','off_target_score','consequence_score','confidence_score','final_score'];
+  const dimLabels = { on_target_score:'On-Target', off_target_score:'Off-Target',
+    consequence_score:'Consequence', confidence_score:'Confidence', final_score:'Composite' };
+  const maxVals = {};
+  dims.forEach(d => { maxVals[d] = Math.max(...guides.map(g => g[d] || 0)); });
+
+  body.innerHTML = `
+    <div class="comp-grid" style="grid-template-columns:repeat(${guides.length},1fr)">
+      ${guides.map(g => {
+        const bd = g.score_breakdown || {};
+        const sc = scoreColor(g.final_score);
+        return `<div class="comp-col">
+          <div class="comp-col-head" style="border-color:${sc}">
+            <div class="comp-gid" style="color:${sc}">${bd.guide_id || 'SG-?'}</div>
+            <div class="comp-seq">${g.sequence}</div>
+            <span class="safety-badge badge-${g.safety_color || 'yellow'}">${g.safety_label}</span>
+          </div>
+          ${dims.map(d => {
+            const val = g[d] || 0;
+            const isMax = val === maxVals[d] && guides.length > 1;
+            return `<div class="comp-row ${isMax ? 'comp-best' : ''}">
+              <div class="comp-dim-label">${dimLabels[d]}</div>
+              <div class="comp-dim-val">${val}</div>
+              <div class="dim-bar"><div class="dim-bar-fill" style="width:${val}%;background:${isMax ? 'var(--green)' : 'var(--border-strong)'}"></div></div>
+            </div>`;
+          }).join('')}
+          <div class="comp-row"><div class="comp-dim-label">GC %</div><div class="comp-dim-val">${(g.gc_content*100).toFixed(1)}%</div></div>
+          <div class="comp-row"><div class="comp-dim-label">Strand</div><div class="comp-dim-val">${g.strand}</div></div>
+          ${(g.crispor_mit_score != null || bd.crispor_mit != null) ? `<div class="comp-row">
+            <div class="comp-dim-label">MIT score</div>
+            <div class="comp-dim-val" style="color:var(--accent)">${g.crispor_mit_score ?? bd.crispor_mit ?? '—'}</div>
+          </div>` : ''}
+          ${g.gnomad?.snp_in_guide ? '<div class="comp-row" style="color:var(--orange)">⚠ gnomAD SNP</div>' : '<div class="comp-row" style="color:var(--green)">✓ No gnomAD SNP</div>'}
+        </div>`;
+      }).join('')}
+    </div>`;
+  modal.style.display = 'flex';
+}
+
+function closeCompareModal() {
+  document.getElementById('compare-modal').style.display = 'none';
+}
+
 function gnomadBadge(c) {
   const g = c.gnomad;
   if (!g || !g.gnomad_checked) return '';
@@ -1624,12 +2021,32 @@ function renderGuideCard(c, i) {
     { label: 'Confidence',  val: c.confidence_score,  color: 'var(--orange)',  tip: 'How confident the scoring model is given this guide\'s sequence features. Low confidence guides should be experimentally validated.' },
   ];
 
-  const crisprBadge = c.crispor_mit_score != null ? `
-    <div class="crispor-badge">
-      🔬 Real genome search · MIT: ${c.crispor_mit_score} · CFD: ${c.crispor_cfd_score} · ${c.crispor_ot_count} off-target sites
-    </div>` : '';
+  // CRISPOR badge — check both c.crispor_mit_score (set by applyCrisprScores)
+  // and bd.crispor_mit (fallback from score_breakdown)
+  const cmit = c.crispor_mit_score ?? bd.crispor_mit;
+  const ccfd = c.crispor_cfd_score ?? bd.crispor_cfd;
+  const cotc = c.crispor_ot_count  ?? bd.crispor_ot_count;
+  const clocus = c.crispor_gene_locus || bd.crispor_gene_locus || '';
+  const hasReal = cmit != null && cmit !== undefined;
 
-  return `<div class="guide-card">
+  const crisprBadge = hasReal ? `
+    <div class="crispor-badge">
+      🔬 Real genome search · MIT: <strong>${cmit}</strong> · CFD: <strong>${ccfd}</strong>
+      · <strong>${cotc}</strong> off-target sites
+      ${clocus ? `· <span style="color:var(--muted)">${clocus}</span>` : ''}
+      ${clinvarOTBadge(c)}
+    </div>` : `<div class="crispor-badge-pending">⏳ Running genome-wide off-target search…</div>`;
+
+  // Cloning primers (pure JS, always available)
+  const primers = cloningPrimersBadge(c.sequence);
+  // Base editing window
+  const baseEditBadge = baseEditWindowBadge(c.sequence);
+  // Comparison checkbox
+  const compChk = `<label class="comp-check-label">
+    <input type="checkbox" class="comp-check" data-seq="${c.sequence}" onchange="toggleCompare(this,'${gid}')"> Add to comparison
+  </label>`;
+
+  return `<div class="guide-card" data-seq="${c.sequence}">
     <div class="guide-card-header">
       <div class="guide-rank">#${rank}</div>
       <div class="guide-id-tag">${gid}</div>
@@ -1648,6 +2065,7 @@ function renderGuideCard(c, i) {
         <div class="meta-item"><div class="meta-key">PAM</div><div class="meta-val">${c.pam}</div></div>
         <div class="meta-item"><div class="meta-key">Location</div><div class="meta-val">${c.chromosome}:${c.start}–${c.end} (${c.strand})</div></div>
         <div class="meta-item"><div class="meta-key">GC Content</div><div class="meta-val">${(c.gc_content * 100).toFixed(1)}%</div></div>
+        <div class="meta-item"><div class="meta-key">Model</div><div class="meta-val" style="color:var(--green);font-size:11px">${bd.scorer === 'gradient_boosting_ml' ? '🤖 Azimuth ML' : '📐 Rule-based'}</div></div>
       </div>
       <div class="dims-grid">
         ${dims.map(d => `
@@ -1658,15 +2076,18 @@ function renderGuideCard(c, i) {
         </div>`).join('')}
       </div>
       ${c.recommendation ? `<div class="reco-box">${c.recommendation}</div>` : ''}
-      <div class="ot-row">
+      <div class="ot-row" style="margin-bottom:10px">
         <div class="ot-tag"><span>1 mm: </span><strong>${c.off_targets_1mm}</strong></div>
         <div class="ot-tag"><span>2 mm: </span><strong>${c.off_targets_2mm}</strong></div>
         <div class="ot-tag"><span>3 mm: </span><strong>${c.off_targets_3mm}</strong></div>
-        <div class="ot-tag"><span>Data tier: </span><strong>${bd.consequence_tier || 'tier1'}</strong></div>
+        <div class="ot-tag"><span>Consequence tier: </span><strong>${bd.consequence_tier || 'tier1'}</strong></div>
       </div>
       ${gnomadBadge(c)}
       ${isoformBadge(c)}
       ${crisprBadge}
+      ${baseEditBadge}
+      ${primers}
+      <div style="margin-top:10px">${compChk}</div>
     </div>
   </div>`;
 }
